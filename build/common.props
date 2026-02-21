@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+</Project>

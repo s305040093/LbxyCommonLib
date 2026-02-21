@@ -1,0 +1,38 @@
+name: 功能需求
+description: 提出一个新的特性或改进建议
+labels: [enhancement]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 功能简述
+      description: 用一两句话描述你希望增加的能力
+      placeholder: 例如：希望支持带权重的压缩规则，按权重进行合并
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: 背景与动机
+      description: 说明该需求解决什么问题，对业务或使用场景有什么价值
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 方案设想
+      description: 可选，简单描述你期望的 API 形态或使用方式
+      placeholder: 包括新的方法签名、示例调用代码等
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 备选方案
+      description: 如有，请说明你考虑过的其他做法及其优缺点
+    validations:
+      required: false
+

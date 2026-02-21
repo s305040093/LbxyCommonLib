@@ -1,0 +1,5 @@
+<Project>
+  <Target Name="AfterBuild">
+    <Message Importance="High" Text="Build completed: $(MSBuildProjectName) @ $(TargetFramework)" />
+  </Target>
+</Project>

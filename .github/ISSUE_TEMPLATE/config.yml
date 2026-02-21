@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全问题报告
+    url: https://github.com/lbxy/LbxyCommonLib/security/advisories
+    about: 如果你发现安全漏洞，请优先通过此渠道报告。
+
