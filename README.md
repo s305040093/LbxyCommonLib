@@ -25,6 +25,7 @@ dotnet pack -c Release
 using System.Collections.Generic;
 using LbxyCommonLib.ListCompression;
 using LbxyCommonLib.ListCompression.Interfaces;
+using LbxyCommonLib.Numerics;
 
 public sealed class OrderItem : ISummable<OrderItem>
 {
@@ -48,6 +49,13 @@ var compressedGlobal = ListCompressor<OrderItem>.Compress(input);
 // 相邻压缩（仅压缩相邻元素）
 var adjacentRule = new CompressionRule<OrderItem> { AdjacentOnly = true };
 var compressedAdjacent = ListCompressor<OrderItem>.Compress(input, adjacentRule);
+
+// 数值相等性辅助：相对/绝对误差控制与链式调用
+double price = 100.000000001;
+double baseline = 100.0;
+bool roughlyEqual = price
+    .EqualsRelatively(baseline, relativeError: 1e-8)
+    && price.EqualsAbsolutely(baseline, absoluteError: 1e-10);
 ```
 
 ## 自定义压缩规则
