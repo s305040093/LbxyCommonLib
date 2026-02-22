@@ -11,7 +11,7 @@ namespace Benchmarks
     {
         public static void Main(string[] args)
         {
-            var switcher = new BenchmarkSwitcher(new[] { typeof(ListCompressionBenchmarks), typeof(NumericalEqualityBenchmarks) });
+            var switcher = new BenchmarkSwitcher(new[] { typeof(ListCompressionBenchmarks), typeof(NumericalEqualityBenchmarks), typeof(DirectoryLauncherBenchmarks), typeof(StringExtensionsBenchmarks), typeof(FileNameLauncherBenchmarks) });
             switcher.Run(args);
         }
     }
