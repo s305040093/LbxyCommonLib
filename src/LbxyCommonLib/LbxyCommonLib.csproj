@@ -6,19 +6,20 @@
     <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <NoWarn>SA1629;SA1642;SA1623</NoWarn>
     <PackageId>LbxyCommonLib</PackageId>
-    <Version>0.0.2</Version>
-    <Description>Cross-version compatible list compression utilities supporting .NET Framework 4.5 and .NET (via netstandard2.0).</Description>
+    <Version>0.1.0</Version>
     <Authors>LbxyCommonLib Team</Authors>
     <Company>Lbxy</Company>
+    <Description>Common utility library for .NET Framework 4.5 and .NET Standard 2.0, including list compression, Excel import, file I/O helpers, string processing, configuration, networking and launcher utilities.</Description>
     <PackageProjectUrl>https://github.com/lbxy/LbxyCommonLib</PackageProjectUrl>
     <RepositoryUrl>https://github.com/lbxy/LbxyCommonLib</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
-    <PackageTags>list-compression;compression;collections;dotnet;netstandard;helper-library</PackageTags>
+    <PackageTags>list-compression;excel;excel-import;file-io;string;utilities;helper-library;dotnet;netstandard;net45</PackageTags>
     <PackageReleaseNotes>See CHANGELOG.md for detailed release notes.</PackageReleaseNotes>
-    <IncludeSymbols>false</IncludeSymbols>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
