@@ -7,6 +7,7 @@
 #pragma warning disable SA1503
 #pragma warning disable SA1513
 #pragma warning disable SA1629
+#pragma warning disable SA1642
 #pragma warning disable SA1116
 #pragma warning disable SA1117
 #pragma warning disable CS8600
@@ -19,6 +20,7 @@ namespace LbxyCommonLib.ExcelImport
     using System;
     using System.Collections.Generic;
     using System.Data;
+    using System.Diagnostics;
     using System.Globalization;
     using System.IO;
     using System.IO.Compression;
@@ -26,7 +28,6 @@ namespace LbxyCommonLib.ExcelImport
     using System.Threading;
     using System.Threading.Tasks;
     using System.Xml;
-    using System.Diagnostics;
     using LbxyCommonLib.ExcelProcessing;
 
     public sealed class ExcelImporter
@@ -625,7 +626,7 @@ namespace LbxyCommonLib.ExcelImport
                     {
                         var result = ReadExcelFromWorkbook(workbook, Path.GetFileName(filePath), settings);
                         stopwatch.Stop();
-                        Trace.WriteLine(BuildFileOpenLogMessage(filePath, true, attempt, stopwatch.ElapsedMilliseconds, null));
+                        Trace.WriteLine(BuildFileOpenLogMessage(filePath, true, attempt, stopwatch.ElapsedMilliseconds));
                         return result;
                     }
                 }
@@ -652,9 +653,10 @@ namespace LbxyCommonLib.ExcelImport
             }
 
             stopwatch.Stop();
-            var fallbackSnapshot = BuildFileLockSnapshot(filePath, attempt, stopwatch.ElapsedMilliseconds, lastException);
-            Trace.WriteLine(BuildFileOpenLogMessage(filePath, false, attempt, stopwatch.ElapsedMilliseconds, lastException));
-            throw new ExcelImportException("Excel 文件在共享模式下打开失败", lastException ?? new IOException("未知文件打开错误"), -1, -1, fallbackSnapshot, ExcelImportErrorCode.FileLocked);
+            var safeException = lastException ?? new IOException("未知文件打开错误");
+            var fallbackSnapshot = BuildFileLockSnapshot(filePath, attempt, stopwatch.ElapsedMilliseconds, safeException);
+            Trace.WriteLine(BuildFileOpenLogMessage(filePath, false, attempt, stopwatch.ElapsedMilliseconds, safeException));
+            throw new ExcelImportException("Excel 文件在共享模式下打开失败", safeException, -1, -1, fallbackSnapshot, ExcelImportErrorCode.FileLocked);
         }
 
         private static bool IsFileLockIOException(IOException ex)
@@ -665,9 +667,9 @@ namespace LbxyCommonLib.ExcelImport
                 return true;
             }
 
-            if (message.Contains("因为它正由另一进程使用", StringComparison.Ordinal) ||
-                message.Contains("由于另一进程正在使用该文件", StringComparison.Ordinal) ||
-                message.Contains("正由另一进程使用", StringComparison.Ordinal))
+            if (message.Contains("因为它正由另一进程使用") ||
+                message.Contains("由于另一进程正在使用该文件") ||
+                message.Contains("正由另一进程使用"))
             {
                 return true;
             }
@@ -682,12 +684,18 @@ namespace LbxyCommonLib.ExcelImport
             return "Path=" + fullPath + "; Attempts=" + attempts.ToString(CultureInfo.InvariantCulture) + "; ElapsedMs=" + elapsedMilliseconds.ToString(CultureInfo.InvariantCulture) + "; Error=" + error;
         }
 
-        private static string BuildFileOpenLogMessage(string filePath, bool success, int attempts, long elapsedMilliseconds, Exception ex)
+        private static string BuildFileOpenLogMessage(string filePath, bool success, int attempts, long elapsedMilliseconds)
         {
             var status = success ? "Success" : "Failure";
             var fullPath = string.IsNullOrWhiteSpace(filePath) ? string.Empty : Path.GetFullPath(filePath);
+            return "[ExcelImporter] OpenFile " + status + " Path=" + fullPath + " Mode=Read,FileShare.ReadWrite Attempts=" + (attempts + 1).ToString(CultureInfo.InvariantCulture) + " ElapsedMs=" + elapsedMilliseconds.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private static string BuildFileOpenLogMessage(string filePath, bool success, int attempts, long elapsedMilliseconds, Exception ex)
+        {
+            var baseMessage = BuildFileOpenLogMessage(filePath, success, attempts, elapsedMilliseconds);
             var error = ex == null ? string.Empty : ex.Message ?? string.Empty;
-            return "[ExcelImporter] OpenFile " + status + " Path=" + fullPath + " Mode=Read,FileShare.ReadWrite Attempts=" + (attempts + 1).ToString(CultureInfo.InvariantCulture) + " ElapsedMs=" + elapsedMilliseconds.ToString(CultureInfo.InvariantCulture) + (string.IsNullOrEmpty(error) ? string.Empty : " Error=" + error);
+            return string.IsNullOrEmpty(error) ? baseMessage : baseMessage + " Error=" + error;
         }
 
         private static DataTable ReadExcelFromWorkbook(IExcelWorkbook workbook, string tableName, ExcelImportSettings settings)

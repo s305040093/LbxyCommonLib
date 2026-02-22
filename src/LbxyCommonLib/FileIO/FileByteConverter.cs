@@ -5,6 +5,7 @@
 #pragma warning disable SA1602
 #pragma warning disable SA1633
 #pragma warning disable SA1649
+#pragma warning disable SA1629
 #pragma warning disable SA1513
 #pragma warning disable SA1402
 
@@ -189,5 +190,6 @@ namespace LbxyCommonLib.FileIO
 #pragma warning restore SA1204
 #pragma warning restore SA1101
 #pragma warning restore SA1513
+#pragma warning restore SA1629
 #pragma warning restore CS1591
 

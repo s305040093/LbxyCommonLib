@@ -4,7 +4,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
-    <PackageId>LbxyCommonLib.ListCompression</PackageId>
+    <NoWarn>SA1629;SA1642;SA1623</NoWarn>
+    <PackageId>LbxyCommonLib</PackageId>
     <Version>0.0.2</Version>
     <Description>Cross-version compatible list compression utilities supporting .NET Framework 4.5 and .NET (via netstandard2.0).</Description>
     <Authors>LbxyCommonLib Team</Authors>

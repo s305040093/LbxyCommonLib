@@ -28,9 +28,9 @@ jobs:
         run: dotnet restore
 
       - name: Build (generate package)
-        run: dotnet build src/LbxyCommonLib.ListCompression/LbxyCommonLib.ListCompression.csproj -c Release --no-restore -p:ContinuousIntegrationBuild=true
+        run: dotnet build src/LbxyCommonLib/LbxyCommonLib.csproj -c Release --no-restore -p:ContinuousIntegrationBuild=true
 
       - name: Push to NuGet
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-        run: dotnet nuget push "src/LbxyCommonLib.ListCompression/bin/Release/*.nupkg" --api-key "$NUGET_API_KEY" --source "$NUGET_SOURCE" --skip-duplicate
+        run: dotnet nuget push "src/LbxyCommonLib/bin/Release/*.nupkg" --api-key "$NUGET_API_KEY" --source "$NUGET_SOURCE" --skip-duplicate

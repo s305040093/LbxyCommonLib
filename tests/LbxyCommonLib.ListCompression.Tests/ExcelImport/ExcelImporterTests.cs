@@ -293,8 +293,8 @@ namespace LbxyCommonLib.ExcelImport.Tests
             {
                 var ex = Assert.Throws<ExcelImportException>(() => importer.ReadToDataTable(path, settings));
                 Assert.That(ex.ErrorCode, Is.EqualTo(ExcelImportErrorCode.FileLocked));
-                StringAssert.Contains("Path=", ex.ValueSnapshot);
-                StringAssert.Contains("Attempts=", ex.ValueSnapshot);
+                Assert.That(ex.ValueSnapshot, Does.Contain("Path="));
+                Assert.That(ex.ValueSnapshot, Does.Contain("Attempts="));
             }
         }
 

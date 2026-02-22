@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\\..\\src\\LbxyCommonLib.ListCompression\\LbxyCommonLib.ListCompression.csproj" />
+    <ProjectReference Include="..\\..\\src\\LbxyCommonLib\\LbxyCommonLib.csproj" />
   </ItemGroup>
 
   <ItemGroup>

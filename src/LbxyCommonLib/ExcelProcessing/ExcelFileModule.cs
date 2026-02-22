@@ -8,6 +8,8 @@
 #pragma warning disable SA1602
 #pragma warning disable SA1201
 #pragma warning disable SA1513
+#pragma warning disable SA1629
+#pragma warning disable SA1642
 #pragma warning disable CS8603
 
 namespace LbxyCommonLib.ExcelProcessing
@@ -239,6 +241,7 @@ namespace LbxyCommonLib.ExcelProcessing
         /// <summary>
         /// 获取工作簿中所有工作表名称的只读列表。
         /// </summary>
+        /// <returns>包含工作表名称的只读列表。</returns>
         IReadOnlyList<string> GetSheetNames();
 
         /// <summary>

@@ -6,6 +6,8 @@
 #pragma warning disable SA1633
 #pragma warning disable SA1649
 #pragma warning disable SA1402
+#pragma warning disable SA1629
+#pragma warning disable SA1642
 
 namespace LbxyCommonLib.StringProcessing
 {
@@ -655,12 +657,14 @@ namespace LbxyCommonLib.StringProcessing
     }
 }
 
-#pragma warning restore SA1402
 #pragma warning restore SA1649
 #pragma warning restore SA1633
 #pragma warning restore SA1602
 #pragma warning restore SA1600
 #pragma warning restore SA1204
 #pragma warning restore SA1101
+#pragma warning restore SA1402
+#pragma warning restore SA1629
+#pragma warning restore SA1642
 #pragma warning restore CS1591
 

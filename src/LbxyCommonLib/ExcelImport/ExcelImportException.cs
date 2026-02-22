@@ -5,6 +5,8 @@
 #pragma warning disable SA1101
 #pragma warning disable SA1204
 #pragma warning disable SA1602
+#pragma warning disable SA1629
+#pragma warning disable SA1642
 
 namespace LbxyCommonLib.ExcelImport
 {
@@ -122,6 +124,9 @@ namespace LbxyCommonLib.ExcelImport
         public ExcelImportErrorCode ErrorCode { get; }
     }
 }
+
+#pragma warning restore SA1642
+#pragma warning restore SA1629
 
 #pragma warning restore SA1204
 #pragma warning restore SA1101

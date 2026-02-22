@@ -29,7 +29,7 @@ jobs:
         run: dotnet test -c Release --no-build --verbosity normal
 
       - name: Pack
-        run: dotnet pack ./src/LbxyCommonLib.ListCompression/LbxyCommonLib.ListCompression.csproj -c Release --no-build
+        run: dotnet pack ./src/LbxyCommonLib/LbxyCommonLib.csproj -c Release --no-build
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
