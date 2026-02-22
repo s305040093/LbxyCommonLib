@@ -5,7 +5,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <PackageId>LbxyCommonLib.ListCompression</PackageId>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <Description>Cross-version compatible list compression utilities supporting .NET Framework 4.5 and .NET (via netstandard2.0).</Description>
     <Authors>LbxyCommonLib Team</Authors>
     <Company>Lbxy</Company>
