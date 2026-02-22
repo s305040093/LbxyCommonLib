@@ -89,6 +89,51 @@ dotnet test
 dotnet run --project tests/Benchmarks
 ```
 
+## ExcelImporter 高级配置
+
+### acceptNumericAsDate
+
+`ExcelImportSettings.AcceptNumericAsDate` 用于控制“看起来像日期的纯数字”是否按日期解析：
+
+- 默认值为 `false`，此时 20260101 等纯数字会被当作普通数字处理。
+- 当设置为 `true` 且目标列类型为 `DateTime` 时，形如 `yyyyMMdd` 的 8 位纯数字会被解析为对应日期，例如 `20260101` 解析为 `2026-01-01`。
+- 每次发生此类识别时，都会在 `ExcelImportFillResult.Logs` 中追加一条带有 i18n 键的提示消息，键为 `ExcelImporter.NumericAsDateWarning`。
+
+风险提示：
+
+- 启用 `acceptNumericAsDate` 后，类似 `20260101` 这样的业务编号有可能被误判为日期。
+- 建议仅在目标列确实是日期列、且源数据约定使用 `yyyyMMdd` 纯数字格式时开启该选项。
+
+示例代码：
+
+```csharp
+using System;
+using System.Data;
+using LbxyCommonLib.ExcelImport;
+
+var settings = new ExcelImportSettings
+{
+    HasHeader = true,
+    HeaderReadMode = ExcelHeaderReadMode.HeaderStartIndex,
+    HeaderStartColumnIndex = 0,
+    AcceptNumericAsDate = true,
+};
+
+var table = new DataTable("NumericDate");
+table.Columns.Add("DateValue", typeof(DateTime));
+
+var importer = new ExcelImporter();
+var result = importer.FillPredefinedDataTable("path-to-file.xlsx", settings, table);
+
+foreach (var log in result.Logs)
+{
+    if (log.Message != null && log.Message.StartsWith("ExcelImporter.NumericAsDateWarning", StringComparison.Ordinal))
+    {
+        // 通过 log.Message 中的 i18n 键与参数接入业务侧多语言系统
+    }
+}
+```
+
 ## 贡献指南
 
 - 使用最新的 .NET SDK（项目通过 `global.json` 固定了版本）

@@ -13,8 +13,32 @@ namespace LbxyCommonLib.FileIO
     using System.IO;
     using System.Security.Cryptography;
 
+    /// <summary>
+    /// 提供基于对称密钥的 HMAC 计算与验证辅助方法。
+    /// </summary>
+    /// <remarks>
+    /// Author: LbxyCommonLib Contributors
+    /// Created: 2026-02-22
+    /// Last Modified: 2026-02-22
+    /// </remarks>
     public static class HmacUtil
     {
+        /// <summary>
+        /// 使用指定算法和密钥计算文件的 HMAC 值。
+        /// </summary>
+        /// <param name="path">要计算的文件路径。</param>
+        /// <param name="key">用于 HMAC 计算的对称密钥。</param>
+        /// <param name="algorithm">HMAC 算法名称，例如 HMACSHA256。</param>
+        /// <returns>计算得到的 HMAC 字节数组。</returns>
+        /// <exception cref="ArgumentNullException">当 <paramref name="path"/>、<paramref name="key"/> 或 <paramref name="algorithm"/> 为 null 时抛出。</exception>
+        /// <exception cref="FileNotFoundException">当文件不存在时抛出。</exception>
+        /// <exception cref="NotSupportedException">当指定的 HMAC 算法名称不受支持时抛出。</exception>
+        /// <example>
+        /// <code>
+        /// var key = Encoding.UTF8.GetBytes("secret");
+        /// var mac = HmacUtil.ComputeFileHmac("file.bin", key, "HMACSHA256");
+        /// </code>
+        /// </example>
         public static byte[] ComputeFileHmac(string path, byte[] key, string algorithm)
         {
             if (path == null)
@@ -44,6 +68,16 @@ namespace LbxyCommonLib.FileIO
             }
         }
 
+        /// <summary>
+        /// 使用指定算法和密钥计算内存数据的 HMAC 值。
+        /// </summary>
+        /// <param name="data">要计算的字节数组。</param>
+        /// <param name="key">用于 HMAC 计算的对称密钥。</param>
+        /// <param name="algorithm">HMAC 算法名称。</param>
+        /// <returns>计算得到的 HMAC 字节数组。</returns>
+        /// <exception cref="ArgumentNullException">
+        /// 当 <paramref name="data"/>、<paramref name="key"/> 或 <paramref name="algorithm"/> 为 null 时抛出。
+        /// </exception>
         public static byte[] ComputeHmac(byte[] data, byte[] key, string algorithm)
         {
             if (data == null)
@@ -67,6 +101,15 @@ namespace LbxyCommonLib.FileIO
             }
         }
 
+        /// <summary>
+        /// 验证指定文件的 HMAC 值是否与预期值一致。
+        /// </summary>
+        /// <param name="path">要验证的文件路径。</param>
+        /// <param name="expectedHmac">预期的 HMAC 字节数组。</param>
+        /// <param name="key">用于 HMAC 计算的对称密钥。</param>
+        /// <param name="algorithm">HMAC 算法名称。</param>
+        /// <returns>当实际 HMAC 与预期值一致时返回 true，否则返回 false。</returns>
+        /// <exception cref="ArgumentNullException">当 <paramref name="expectedHmac"/> 为 null 时抛出。</exception>
         public static bool VerifyFileHmac(string path, byte[] expectedHmac, byte[] key, string algorithm)
         {
             if (expectedHmac == null)
@@ -107,4 +150,3 @@ namespace LbxyCommonLib.FileIO
 #pragma warning restore SA1204
 #pragma warning restore SA1101
 #pragma warning restore CS1591
-

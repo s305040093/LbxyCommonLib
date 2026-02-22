@@ -4,6 +4,11 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using LbxyCommonLib.ListCompression;
 using LbxyCommonLib.Numerics;
+using LbxyCommonLib.ExcelImport;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
+using System.Data;
+using System.IO;
 
 namespace Benchmarks
 {
@@ -11,7 +16,7 @@ namespace Benchmarks
     {
         public static void Main(string[] args)
         {
-            var switcher = new BenchmarkSwitcher(new[] { typeof(ListCompressionBenchmarks), typeof(NumericalEqualityBenchmarks), typeof(DirectoryLauncherBenchmarks), typeof(StringExtensionsBenchmarks), typeof(FileNameLauncherBenchmarks) });
+            var switcher = new BenchmarkSwitcher(new[] { typeof(ListCompressionBenchmarks), typeof(NumericalEqualityBenchmarks), typeof(DirectoryLauncherBenchmarks), typeof(StringExtensionsBenchmarks), typeof(FileNameLauncherBenchmarks), typeof(ExcelImporterBenchmarks) });
             switcher.Run(args);
         }
     }
@@ -124,6 +129,83 @@ namespace Benchmarks
             }
 
             return count;
+        }
+    }
+
+    [MemoryDiagnoser]
+    public class ExcelImporterBenchmarks
+    {
+        private string path;
+        private ExcelImporter importer;
+        private ExcelImportSettings settings;
+
+        [GlobalSetup]
+        public void Setup()
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "LbxyCommonLibBench_ExcelImporter");
+            Directory.CreateDirectory(dir);
+            path = Path.Combine(dir, Guid.NewGuid().ToString("N") + ".xlsx");
+
+            using (var fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite))
+            {
+                IWorkbook wb = new XSSFWorkbook();
+                var sheet = wb.CreateSheet("Data");
+
+                var header = sheet.CreateRow(0);
+                header.CreateCell(0).SetCellValue("Col1");
+                header.CreateCell(1).SetCellValue("Col2");
+                header.CreateCell(2).SetCellValue("Col3");
+                header.CreateCell(3).SetCellValue("Col4");
+                header.CreateCell(4).SetCellValue("Col5");
+
+                for (int i = 1; i <= 50000; i++)
+                {
+                    var row = sheet.CreateRow(i);
+                    row.CreateCell(0).SetCellValue("Row" + i.ToString());
+                    row.CreateCell(1).SetCellValue(i);
+                    row.CreateCell(2).SetCellValue(i * 0.1d);
+                    row.CreateCell(3).SetCellValue(DateTime.UtcNow);
+                    row.CreateCell(4).SetCellValue(i % 2 == 0);
+                }
+
+                wb.Write(fs);
+            }
+
+            importer = new ExcelImporter();
+            settings = new ExcelImportSettings
+            {
+                HasHeader = true,
+            };
+        }
+
+        [GlobalCleanup]
+        public void Cleanup()
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(path))
+                {
+                    var dir = Path.GetDirectoryName(path);
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                    }
+
+                    if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                    {
+                        Directory.Delete(dir, true);
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        [Benchmark]
+        public DataTable ReadLargeXlsx()
+        {
+            return importer.ReadToDataTable(path, settings);
         }
     }
 }

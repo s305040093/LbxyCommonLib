@@ -13,8 +13,32 @@ namespace LbxyCommonLib.FileIO
     using System;
     using System.IO;
 
+    /// <summary>
+    /// 提供基于字节数组的简单文件读写辅助方法（同步版本）。
+    /// </summary>
+    /// <remarks>
+    /// Author: LbxyCommonLib Contributors
+    /// Created: 2026-02-22
+    /// Last Modified: 2026-02-22
+    /// </remarks>
     public static class FileByteConverter
     {
+        /// <summary>
+        /// 将整个字节数组写入到指定路径的文件中。
+        /// </summary>
+        /// <param name="path">目标文件路径，必须为非空且非空字符串。</param>
+        /// <param name="data">要写入的字节数组，不能为 null。</param>
+        /// <param name="overwrite">当目标文件已存在时，指示是否覆盖（true 为覆盖，false 时若存在则抛异常）。</param>
+        /// <exception cref="ArgumentNullException">当 <paramref name="path"/> 或 <paramref name="data"/> 为 null 时抛出。</exception>
+        /// <exception cref="ArgumentException">当 <paramref name="path"/> 为空字符串时抛出。</exception>
+        /// <exception cref="IOException">当文件系统 I/O 发生错误时抛出。</exception>
+        /// <remarks>若目标目录不存在，将自动创建。</remarks>
+        /// <example>
+        /// <code>
+        /// var data = Encoding.UTF8.GetBytes("content");
+        /// FileByteConverter.Write("file.bin", data, overwrite: true);
+        /// </code>
+        /// </example>
         public static void Write(string path, byte[] data, bool overwrite)
         {
             if (path == null)
@@ -47,6 +71,14 @@ namespace LbxyCommonLib.FileIO
             }
         }
 
+        /// <summary>
+        /// 尝试写入文件，并在出现异常时捕获错误信息而不是抛出。
+        /// </summary>
+        /// <param name="path">目标文件路径。</param>
+        /// <param name="data">要写入的字节数组。</param>
+        /// <param name="overwrite">是否覆盖已存在的文件。</param>
+        /// <param name="errorMessage">写入失败时输出的错误消息；成功时为空字符串。</param>
+        /// <returns>写入成功返回 true，失败返回 false。</returns>
         public static bool TryWrite(string path, byte[] data, bool overwrite, out string errorMessage)
         {
             try
@@ -62,6 +94,22 @@ namespace LbxyCommonLib.FileIO
             }
         }
 
+        /// <summary>
+        /// 读取指定路径文件的全部内容并返回字节数组。
+        /// </summary>
+        /// <param name="path">要读取的文件路径，必须为非空且非空字符串。</param>
+        /// <returns>包含文件全部内容的字节数组；当文件长度为 0 时返回空数组。</returns>
+        /// <exception cref="ArgumentNullException">当 <paramref name="path"/> 为 null 时抛出。</exception>
+        /// <exception cref="ArgumentException">当 <paramref name="path"/> 为空字符串时抛出。</exception>
+        /// <exception cref="FileNotFoundException">当文件不存在时抛出。</exception>
+        /// <exception cref="IOException">
+        /// 当文件过大而无法加载到单个字节数组，或在读取过程中遇到意外的文件结束时抛出。
+        /// </exception>
+        /// <example>
+        /// <code>
+        /// var bytes = FileByteConverter.Read("file.bin");
+        /// </code>
+        /// </example>
         public static byte[] Read(string path)
         {
             if (path == null)
@@ -108,6 +156,13 @@ namespace LbxyCommonLib.FileIO
             }
         }
 
+        /// <summary>
+        /// 尝试读取文件，并在出现异常时捕获错误信息而不是抛出。
+        /// </summary>
+        /// <param name="path">要读取的文件路径。</param>
+        /// <param name="data">读取成功时输出的字节数组，失败时为长度为 0 的数组。</param>
+        /// <param name="errorMessage">读取失败时输出的错误消息；成功时为空字符串。</param>
+        /// <returns>读取成功返回 true，失败返回 false。</returns>
         public static bool TryRead(string path, out byte[] data, out string errorMessage)
         {
             try

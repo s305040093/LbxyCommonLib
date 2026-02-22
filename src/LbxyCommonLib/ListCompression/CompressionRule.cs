@@ -11,6 +11,13 @@ namespace LbxyCommonLib.ListCompression
     /// By default, <see cref="AdjacentOnly"/> is false so the default rule performs global compression,
     /// and the rule-less overloads of <see cref="ListCompressor{T}"/> use the same behavior.
     /// </summary>
+    /// <remarks>
+    /// Author: LbxyCommonLib Contributors
+    /// Created: 2026-02-22
+    /// Last Modified: 2026-02-22
+    /// When no custom equality or merge delegates are supplied, equality falls back to <see cref="object.Equals(object, object)"/>,
+    /// and merge behavior prefers <see cref="ISummable{T}"/> when available.
+    /// </remarks>
     /// <typeparam name="T">Element type.</typeparam>
     public sealed class CompressionRule<T>
     {

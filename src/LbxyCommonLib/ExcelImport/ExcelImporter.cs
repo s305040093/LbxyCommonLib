@@ -26,6 +26,7 @@ namespace LbxyCommonLib.ExcelImport
     using System.Threading;
     using System.Threading.Tasks;
     using System.Xml;
+    using System.Diagnostics;
     using LbxyCommonLib.ExcelProcessing;
 
     public sealed class ExcelImporter
@@ -33,9 +34,28 @@ namespace LbxyCommonLib.ExcelImport
         /// <summary>
         /// 从指定文件路径读取 Excel 数据并加载到 DataTable。
         /// </summary>
-        /// <param name="filePath">Excel 文件路径。</param>
-        /// <param name="settings">导入设置。</param>
-        /// <returns>包含导入结果的 DataTable。</returns>
+        /// <param name="filePath">Excel 文件路径，必须为本地存在的 .xlsx/.xls/.xlsm 文件。</param>
+        /// <param name="settings">导入设置，用于指定工作表、表头模式、列映射与类型转换等行为。</param>
+        /// <returns>包含导入结果数据的 <see cref="DataTable"/> 实例。</returns>
+        /// <exception cref="ExcelImportException">
+        /// 当文件不存在、设置为空、文件格式不受支持或解析过程中发生错误（包括数值/日期转换失败等）时抛出。
+        /// </exception>
+        /// <remarks>
+        /// Author: LbxyCommonLib Contributors
+        /// Created: 2026-02-22
+        /// Last Modified: 2026-02-22
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// var settings = new ExcelImportSettings
+        /// {
+        ///     HasHeader = true,
+        /// };
+        ///
+        /// var importer = new ExcelImporter();
+        /// var table = importer.ReadToDataTable("orders.xlsx", settings);
+        /// </code>
+        /// </example>
         public DataTable ReadToDataTable(string filePath, ExcelImportSettings settings)
         {
             Validate(filePath, settings);
@@ -57,9 +77,27 @@ namespace LbxyCommonLib.ExcelImport
         /// 从指定流读取 Excel 数据并加载到 DataTable。
         /// </summary>
         /// <param name="stream">传入可读取的Excel数据流，若提供则优先使用流而非文件路径。</param>
-        /// <param name="settings">导入设置。</param>
-        /// <returns>包含导入结果的 DataTable。</returns>
-        /// <exception cref="ArgumentException">当 stream 为 null 或不可读时抛出。</exception>
+        /// <param name="settings">导入设置，用于指定工作表、表头模式、列映射与类型转换等行为。</param>
+        /// <returns>包含导入结果数据的 <see cref="DataTable"/> 实例。</returns>
+        /// <exception cref="ArgumentException">当 <paramref name="stream"/> 为 null 或不可读时抛出。</exception>
+        /// <exception cref="ExcelImportException">
+        /// 当设置为空、文件格式不受支持或解析过程中发生错误（包括数值/日期转换失败等）时抛出。
+        /// </exception>
+        /// <remarks>
+        /// Author: LbxyCommonLib Contributors
+        /// Created: 2026-02-22
+        /// Last Modified: 2026-02-22
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// using (var stream = File.OpenRead("orders.xlsx"))
+        /// {
+        ///     var settings = new ExcelImportSettings { HasHeader = true };
+        ///     var importer = new ExcelImporter();
+        ///     var table = importer.ReadToDataTable(stream, settings);
+        /// }
+        /// </code>
+        /// </example>
         public DataTable ReadToDataTable(Stream stream, ExcelImportSettings settings)
         {
             if (stream == null)
@@ -91,6 +129,30 @@ namespace LbxyCommonLib.ExcelImport
             }
         }
 
+        /// <summary>
+        /// 异步从指定文件路径读取 Excel 数据并加载到 DataTable。
+        /// </summary>
+        /// <param name="filePath">Excel 文件路径，必须为本地存在的 .xlsx/.xls/.xlsm 文件。</param>
+        /// <param name="settings">导入设置，用于指定工作表、表头模式、列映射与类型转换等行为。</param>
+        /// <param name="cancellationToken">可选取消标记，用于在长时间导入过程中主动取消操作。</param>
+        /// <returns>包含导入结果数据的 <see cref="DataTable"/> 实例。</returns>
+        /// <exception cref="ExcelImportException">
+        /// 当文件不存在、设置为空、文件格式不受支持、解析过程中发生错误或导入被取消时抛出。
+        /// </exception>
+        /// <remarks>
+        /// Author: LbxyCommonLib Contributors
+        /// Created: 2026-02-22
+        /// Last Modified: 2026-02-22
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// var settings = new ExcelImportSettings { HasHeader = true };
+        /// var importer = new ExcelImporter();
+        ///
+        /// using var cts = new CancellationTokenSource();
+        /// var table = await importer.ReadToDataTableAsync("orders.xlsx", settings, cts.Token);
+        /// </code>
+        /// </example>
         public async Task<DataTable> ReadToDataTableAsync(string filePath, ExcelImportSettings settings, CancellationToken cancellationToken = default(CancellationToken))
         {
             Validate(filePath, settings);
@@ -120,10 +182,26 @@ namespace LbxyCommonLib.ExcelImport
         /// 异步从指定流读取 Excel 数据并加载到 DataTable。
         /// </summary>
         /// <param name="stream">传入可读取的Excel数据流，若提供则优先使用流而非文件路径。</param>
-        /// <param name="settings">导入设置。</param>
+        /// <param name="settings">导入设置，用于指定工作表、表头模式、列映射与类型转换等行为。</param>
         /// <param name="cancellationToken">取消标记。</param>
-        /// <returns>包含导入结果的 DataTable。</returns>
-        /// <exception cref="ArgumentException">当 stream 为 null 或不可读时抛出。</exception>
+        /// <returns>包含导入结果数据的 <see cref="DataTable"/> 实例。</returns>
+        /// <exception cref="ArgumentException">当 <paramref name="stream"/> 为 null 或不可读时抛出。</exception>
+        /// <exception cref="ExcelImportException">
+        /// 当设置为空、文件格式不受支持、解析过程中发生错误或导入被取消时抛出。
+        /// </exception>
+        /// <remarks>
+        /// Author: LbxyCommonLib Contributors
+        /// Created: 2026-02-22
+        /// Last Modified: 2026-02-22
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// using var stream = File.OpenRead("orders.xlsx");
+        /// var settings = new ExcelImportSettings { HasHeader = true };
+        /// var importer = new ExcelImporter();
+        /// var table = await importer.ReadToDataTableAsync(stream, settings);
+        /// </code>
+        /// </example>
         public async Task<DataTable> ReadToDataTableAsync(Stream stream, ExcelImportSettings settings, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (stream == null)
@@ -163,6 +241,46 @@ namespace LbxyCommonLib.ExcelImport
             }
         }
 
+        /// <summary>
+        /// 使用预先定义结构的 <see cref="DataTable"/> 作为目标，将 Excel 数据按列名映射并填充到该表中。
+        /// </summary>
+        /// <param name="filePath">Excel 文件路径，必须为本地存在的 .xlsx/.xls/.xlsm 文件。</param>
+        /// <param name="settings">
+        /// 导入设置，要求 <see cref="ExcelImportSettings.HasHeader"/> 为 true，
+        /// 并通过 <see cref="ExcelImportSettings.HeaderReadMode"/>、<see cref="ExcelImportSettings.HeaderRowIndex"/>、
+        /// <see cref="ExcelImportSettings.DataRowIndex"/> 等选项指定表头与数据范围及列映射策略。
+        /// </param>
+        /// <param name="target">预构建的目标 <see cref="DataTable"/>，其中列名称和数据类型定义导入目标结构。</param>
+        /// <returns>
+        /// <see cref="ExcelImportFillResult"/> 对象，包含填充后的 DataTable 以及导入过程中的日志（如类型转换失败、列名不匹配等）。
+        /// </returns>
+        /// <exception cref="ExcelImportException">
+        /// 当目标 DataTable 为空、未启用表头模式、未指定高级表头读取模式、表头/数据行索引配置不合法、
+        /// 表头缺失或列映射失败以及解析过程中发生错误时抛出。
+        /// </exception>
+        /// <remarks>
+        /// Author: LbxyCommonLib Contributors
+        /// Created: 2026-02-22
+        /// Last Modified: 2026-02-22
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// var settings = new ExcelImportSettings
+        /// {
+        ///     HasHeader = true,
+        ///     HeaderReadMode = ExcelHeaderReadMode.HeaderByName,
+        ///     HeaderRowIndex = 0,
+        ///     DataRowIndex = 1,
+        /// };
+        ///
+        /// var table = new DataTable("Orders");
+        /// table.Columns.Add("CustomerName", typeof(string));
+        /// table.Columns.Add("Amount", typeof(decimal));
+        ///
+        /// var importer = new ExcelImporter();
+        /// var result = importer.FillPredefinedDataTable("orders.xlsx", settings, table);
+        /// </code>
+        /// </example>
         public ExcelImportFillResult FillPredefinedDataTable(string filePath, ExcelImportSettings settings, DataTable target)
         {
             if (target == null)
@@ -181,6 +299,11 @@ namespace LbxyCommonLib.ExcelImport
                 throw new ExcelImportException("未指定高级表头读取模式 HeaderReadMode", new InvalidOperationException("HeaderReadMode=None"), -1, -1, string.Empty);
             }
 
+            if (settings.HasHeader && settings.HeaderRowIndex >= settings.DataRowIndex)
+            {
+                throw new ExcelImportException("当 HasHeader 为 true 时必须满足 HeaderRowIndex < DataRowIndex", new ArgumentException("settings"), -1, -1, string.Empty);
+            }
+
             var logs = new List<ExcelImportLogEntry>();
 
             try
@@ -196,7 +319,7 @@ namespace LbxyCommonLib.ExcelImport
                         throw new ExcelImportException("Excel 中不存在任何行，无法读取表头", new InvalidOperationException("EmptySheet"), -1, -1, string.Empty);
                     }
 
-                    var headerRow = ReadRowValuesFromSheet(sheet, 0, columnCount);
+                    var headerRow = ReadRowValuesFromSheet(sheet, settings.HeaderRowIndex, columnCount);
                     if (headerRow.Count == 0)
                     {
                         throw new ExcelImportException("未检测到表头行内容", new InvalidOperationException("EmptyHeader"), -1, -1, string.Empty);
@@ -204,7 +327,7 @@ namespace LbxyCommonLib.ExcelImport
 
                     var bindings = BuildAdvancedColumnBindings(headerRow, target, settings, logs);
 
-                    for (var r = 1; r < rowCount; r++)
+                    for (var r = settings.DataRowIndex; r < rowCount; r++)
                     {
                         var rowValues = ReadRowValuesFromSheet(sheet, r, columnCount);
                         var row = target.NewRow();
@@ -228,6 +351,7 @@ namespace LbxyCommonLib.ExcelImport
                                 valueToAssign = ConvertToColumnType(
                                     normalized,
                                     column.DataType,
+                                    settings,
                                     logs,
                                     r + 1,
                                     srcIndex,
@@ -254,12 +378,55 @@ namespace LbxyCommonLib.ExcelImport
             return new ExcelImportFillResult(target, logs);
         }
 
+        /// <summary>
+        /// 从指定文件路径读取 Excel 数据，并将结果转换为 object 矩阵（适合直接序列化为 JSON 数组）。
+        /// </summary>
+        /// <param name="filePath">Excel 文件路径，必须为本地存在的 .xlsx/.xls/.xlsm 文件。</param>
+        /// <param name="settings">导入设置，用于控制表头、列映射与类型转换行为。</param>
+        /// <returns>按行优先的二维 object 数组，每一行对应一条数据记录。</returns>
+        /// <exception cref="ExcelImportException">
+        /// 当底层 <see cref="ReadToDataTable(string, ExcelImportSettings)"/> 调用失败时抛出。
+        /// </exception>
+        /// <remarks>
+        /// Author: LbxyCommonLib Contributors
+        /// Created: 2026-02-22
+        /// Last Modified: 2026-02-22
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// var settings = new ExcelImportSettings { HasHeader = true };
+        /// var importer = new ExcelImporter();
+        /// var rows = importer.ImportExcel("orders.xlsx", settings);
+        /// </code>
+        /// </example>
         public object[][] ImportExcel(string filePath, ExcelImportSettings settings)
         {
             var table = ReadToDataTable(filePath, settings);
             return ConvertDataTableToMatrix(table);
         }
 
+        /// <summary>
+        /// 从指定流读取 Excel 数据，并将结果转换为 object 矩阵（适合直接序列化为 JSON 数组）。
+        /// </summary>
+        /// <param name="stream">可读取的 Excel 数据流。</param>
+        /// <param name="settings">导入设置，用于控制表头、列映射与类型转换行为。</param>
+        /// <returns>按行优先的二维 object 数组，每一行对应一条数据记录。</returns>
+        /// <exception cref="ExcelImportException">
+        /// 当底层 <see cref="ReadToDataTable(Stream, ExcelImportSettings)"/> 调用失败时抛出。
+        /// </exception>
+        /// <remarks>
+        /// Author: LbxyCommonLib Contributors
+        /// Created: 2026-02-22
+        /// Last Modified: 2026-02-22
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// using var stream = File.OpenRead("orders.xlsx");
+        /// var settings = new ExcelImportSettings { HasHeader = true };
+        /// var importer = new ExcelImporter();
+        /// var rows = importer.ImportExcel(stream, settings);
+        /// </code>
+        /// </example>
         public object[][] ImportExcel(Stream stream, ExcelImportSettings settings)
         {
             var table = ReadToDataTable(stream, settings);
@@ -336,18 +503,202 @@ namespace LbxyCommonLib.ExcelImport
             return new ExcelImportException(message, ex, -1, -1, string.Empty, code);
         }
 
+        private static bool TryParseEightDigitNumericDate(string raw, out DateTime date)
+        {
+            date = default(DateTime);
+            if (string.IsNullOrEmpty(raw))
+            {
+                return false;
+            }
+
+            var trimmed = raw.Trim();
+            if (trimmed.Length != 8)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < trimmed.Length; i++)
+            {
+                if (trimmed[i] < '0' || trimmed[i] > '9')
+                {
+                    return false;
+                }
+            }
+
+            int year;
+            int month;
+            int day;
+            if (!int.TryParse(trimmed.Substring(0, 4), out year))
+            {
+                return false;
+            }
+
+            if (!int.TryParse(trimmed.Substring(4, 2), out month))
+            {
+                return false;
+            }
+
+            if (!int.TryParse(trimmed.Substring(6, 2), out day))
+            {
+                return false;
+            }
+
+            try
+            {
+                date = new DateTime(year, month, day);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string GetCellAddress(int rowIndex, int columnIndex)
+        {
+            var colIndex = columnIndex;
+            if (colIndex < 0)
+            {
+                colIndex = 0;
+            }
+
+            var chars = new char[8];
+            var pos = chars.Length;
+            var index = colIndex;
+            do
+            {
+                var remainder = index % 26;
+                chars[--pos] = (char)('A' + remainder);
+                index = (index / 26) - 1;
+            }
+            while (index >= 0 && pos > 0);
+
+            var columnLetters = new string(chars, pos, chars.Length - pos);
+            if (rowIndex < 1)
+            {
+                rowIndex = 1;
+            }
+
+            return columnLetters + rowIndex.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private static void LogNumericAsDateWarning(ExcelImportSettings settings, List<ExcelImportLogEntry> logs, int rowIndex, int columnIndex, string columnName, string rawValue, DateTime parsedDate)
+        {
+            if (logs == null)
+            {
+                return;
+            }
+
+            var cellAddress = GetCellAddress(rowIndex, columnIndex);
+            var dateText = parsedDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            var key = settings.NumericAsDateI18nKey ?? "ExcelImporter.NumericAsDateWarning";
+            var zh = string.Format(
+                CultureInfo.InvariantCulture,
+                "检测到单元格 {0} 的纯数字值 {1} 被系统识别为日期 {2}，请确认是否按日期格式导入。",
+                cellAddress,
+                rawValue,
+                dateText);
+            var en = string.Format(
+                CultureInfo.InvariantCulture,
+                "Detected that pure numeric value {1} in cell {0} is recognized as date {2}. Please confirm whether to import it as date.",
+                cellAddress,
+                rawValue,
+                dateText);
+            var message = key + "|" + zh + "|" + en;
+            logs.Add(new ExcelImportLogEntry(rowIndex, columnIndex, columnName ?? string.Empty, message, rawValue));
+        }
+
         private static DataTable ReadExcel(string filePath, ExcelImportSettings settings)
         {
-            using (var workbook = ExcelWorkbookProvider.Current.Open(filePath))
+            const int maxRetries = 3;
+            const int retryDelayMilliseconds = 200;
+
+            var attempt = 0;
+            var stopwatch = Stopwatch.StartNew();
+            Exception lastException = null;
+
+            while (attempt <= maxRetries)
             {
-                return ReadExcelFromWorkbook(workbook, Path.GetFileName(filePath), settings);
+                try
+                {
+                    using (var workbook = ExcelWorkbookProvider.Current.Open(filePath))
+                    {
+                        var result = ReadExcelFromWorkbook(workbook, Path.GetFileName(filePath), settings);
+                        stopwatch.Stop();
+                        Trace.WriteLine(BuildFileOpenLogMessage(filePath, true, attempt, stopwatch.ElapsedMilliseconds, null));
+                        return result;
+                    }
+                }
+                catch (IOException ex)
+                {
+                    lastException = ex;
+                    attempt++;
+                    if (attempt > maxRetries || !IsFileLockIOException(ex))
+                    {
+                        stopwatch.Stop();
+                        var snapshot = BuildFileLockSnapshot(filePath, attempt, stopwatch.ElapsedMilliseconds, ex);
+                        Trace.WriteLine(BuildFileOpenLogMessage(filePath, false, attempt, stopwatch.ElapsedMilliseconds, ex));
+                        throw new ExcelImportException("Excel 文件在共享模式下打开失败", ex, -1, -1, snapshot, ExcelImportErrorCode.FileLocked);
+                    }
+
+                    Thread.Sleep(retryDelayMilliseconds);
+                }
+                catch (Exception ex)
+                {
+                    stopwatch.Stop();
+                    Trace.WriteLine(BuildFileOpenLogMessage(filePath, false, attempt + 1, stopwatch.ElapsedMilliseconds, ex));
+                    throw WrapAsExcelImportException("Excel 导入失败", ex);
+                }
             }
+
+            stopwatch.Stop();
+            var fallbackSnapshot = BuildFileLockSnapshot(filePath, attempt, stopwatch.ElapsedMilliseconds, lastException);
+            Trace.WriteLine(BuildFileOpenLogMessage(filePath, false, attempt, stopwatch.ElapsedMilliseconds, lastException));
+            throw new ExcelImportException("Excel 文件在共享模式下打开失败", lastException ?? new IOException("未知文件打开错误"), -1, -1, fallbackSnapshot, ExcelImportErrorCode.FileLocked);
+        }
+
+        private static bool IsFileLockIOException(IOException ex)
+        {
+            var message = ex.Message ?? string.Empty;
+            if (message.IndexOf("used by another process", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            if (message.Contains("因为它正由另一进程使用", StringComparison.Ordinal) ||
+                message.Contains("由于另一进程正在使用该文件", StringComparison.Ordinal) ||
+                message.Contains("正由另一进程使用", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static string BuildFileLockSnapshot(string filePath, int attempts, long elapsedMilliseconds, Exception ex)
+        {
+            var fullPath = string.IsNullOrWhiteSpace(filePath) ? string.Empty : Path.GetFullPath(filePath);
+            var error = ex == null ? string.Empty : ex.Message ?? string.Empty;
+            return "Path=" + fullPath + "; Attempts=" + attempts.ToString(CultureInfo.InvariantCulture) + "; ElapsedMs=" + elapsedMilliseconds.ToString(CultureInfo.InvariantCulture) + "; Error=" + error;
+        }
+
+        private static string BuildFileOpenLogMessage(string filePath, bool success, int attempts, long elapsedMilliseconds, Exception ex)
+        {
+            var status = success ? "Success" : "Failure";
+            var fullPath = string.IsNullOrWhiteSpace(filePath) ? string.Empty : Path.GetFullPath(filePath);
+            var error = ex == null ? string.Empty : ex.Message ?? string.Empty;
+            return "[ExcelImporter] OpenFile " + status + " Path=" + fullPath + " Mode=Read,FileShare.ReadWrite Attempts=" + (attempts + 1).ToString(CultureInfo.InvariantCulture) + " ElapsedMs=" + elapsedMilliseconds.ToString(CultureInfo.InvariantCulture) + (string.IsNullOrEmpty(error) ? string.Empty : " Error=" + error);
         }
 
         private static DataTable ReadExcelFromWorkbook(IExcelWorkbook workbook, string tableName, ExcelImportSettings settings)
         {
             var sheet = GetTargetSheet(workbook, settings);
             var dt = new DataTable(string.IsNullOrEmpty(tableName) ? "Sheet" : tableName);
+
+            if (settings.HasHeader && settings.HeaderRowIndex >= settings.DataRowIndex)
+            {
+                throw new ArgumentException("当 HasHeader 为 true 时必须满足 HeaderRowIndex < DataRowIndex", "settings");
+            }
 
             var rowCount = sheet.RowCount;
             var columnCount = sheet.ColumnCount;
@@ -356,23 +707,24 @@ namespace LbxyCommonLib.ExcelImport
             var headerNames = new List<string>();
             var startRow = 0;
 
-            if (settings.HasHeader && rowCount > 0)
+            if (settings.HasHeader && rowCount > settings.HeaderRowIndex)
             {
-                headerNames = ReadRowValuesFromSheet(sheet, 0, columnCount);
+                headerNames = ReadRowValuesFromSheet(sheet, settings.HeaderRowIndex, columnCount);
                 BuildSchema(dt, headerNames, settings);
                 BuildColumnMap(colMap, headerNames.Count, settings);
                 headerProcessed = true;
-                startRow = 1;
+                startRow = settings.DataRowIndex;
             }
 
             if (!headerProcessed)
             {
-                var firstRowValues = rowCount > 0 ? ReadRowValuesFromSheet(sheet, 0, columnCount) : new List<string>();
+                var firstRowIndex = settings.DataRowIndex < 0 ? 0 : settings.DataRowIndex;
+                var firstRowValues = rowCount > firstRowIndex ? ReadRowValuesFromSheet(sheet, firstRowIndex, columnCount) : new List<string>();
                 var cols = firstRowValues.Count > 0 ? firstRowValues.Count : columnCount;
                 BuildSchemaNoHeader(dt, cols, settings);
                 BuildColumnMap(colMap, cols, settings);
                 headerProcessed = true;
-                startRow = 0;
+                startRow = firstRowIndex;
             }
 
             for (var r = startRow; r < rowCount; r++)
@@ -488,6 +840,53 @@ namespace LbxyCommonLib.ExcelImport
                 return bindings;
             }
 
+            if (settings.HeaderReadMode == ExcelHeaderReadMode.HeaderByName)
+            {
+                var nameToIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                for (var i = 0; i < headerRow.Count; i++)
+                {
+                    var rawName = headerRow[i] ?? string.Empty;
+                    if (string.IsNullOrEmpty(rawName))
+                    {
+                        continue;
+                    }
+
+                    var canonicalName = rawName;
+                    if (settings.HeaderRenameMapByName != null && settings.HeaderRenameMapByName.TryGetValue(rawName, out var mappedName))
+                    {
+                        canonicalName = mappedName ?? string.Empty;
+                    }
+
+                    if (string.IsNullOrEmpty(canonicalName))
+                    {
+                        continue;
+                    }
+
+                    if (!nameToIndex.ContainsKey(canonicalName))
+                    {
+                        nameToIndex[canonicalName] = i;
+                    }
+                    else
+                    {
+                        logs.Add(new ExcelImportLogEntry(1, i, canonicalName, "表头名称重复: " + canonicalName, rawName));
+                    }
+                }
+
+                for (var i = 0; i < target.Columns.Count; i++)
+                {
+                    var column = target.Columns[i];
+                    var columnName = column.ColumnName ?? string.Empty;
+                    if (string.IsNullOrEmpty(columnName) || !nameToIndex.TryGetValue(columnName, out var srcIndex))
+                    {
+                        throw new ExcelImportException("在表头中未找到匹配的列名: " + columnName, new ArgumentException("target.Columns"), -1, -1, columnName);
+                    }
+
+                    bindings.Add(new ExcelColumnBinding(srcIndex, i));
+                }
+
+                return bindings;
+            }
+
             if (settings.HeaderReadMode == ExcelHeaderReadMode.HeaderStartIndex)
             {
                 if (!settings.HeaderStartColumnIndex.HasValue)
@@ -526,7 +925,7 @@ namespace LbxyCommonLib.ExcelImport
             throw new ExcelImportException("未识别的 HeaderReadMode", new InvalidOperationException("HeaderReadMode"), -1, -1, settings.HeaderReadMode.ToString());
         }
 
-        private static object ConvertToColumnType(object value, Type targetType, List<ExcelImportLogEntry> logs, int rowIndex, int columnIndex, string columnName, string raw)
+        private static object ConvertToColumnType(object value, Type targetType, ExcelImportSettings settings, List<ExcelImportLogEntry> logs, int rowIndex, int columnIndex, string columnName, string raw)
         {
             if (value == null || value is DBNull)
             {
@@ -540,8 +939,67 @@ namespace LbxyCommonLib.ExcelImport
 
             var underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
 
+            var rawString = raw ?? Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+            DateTime numericDateCandidate;
+            var hasNumericDateCandidate = TryParseEightDigitNumericDate(rawString, out numericDateCandidate);
+            var skipNumericDateParsing = hasNumericDateCandidate && settings != null && !settings.AcceptNumericAsDate;
+            var acceptNumericDateAsDate = hasNumericDateCandidate && settings != null && settings.AcceptNumericAsDate && underlying == typeof(DateTime);
+
             try
             {
+                if (hasNumericDateCandidate && settings != null)
+                {
+                    LogNumericAsDateWarning(settings, logs, rowIndex, columnIndex, columnName, rawString, numericDateCandidate);
+                    if (acceptNumericDateAsDate)
+                    {
+                        return numericDateCandidate;
+                    }
+                }
+
+                if (underlying == typeof(DateTime))
+                {
+                    if (skipNumericDateParsing)
+                    {
+                        return value;
+                    }
+
+                    if (value is DateTime dt)
+                    {
+                        return dt;
+                    }
+
+                    if (value is double d)
+                    {
+                        return DateTime.FromOADate(d);
+                    }
+
+                    if (value is float f)
+                    {
+                        return DateTime.FromOADate(f);
+                    }
+
+                    if (value is decimal dec)
+                    {
+                        return DateTime.FromOADate((double)dec);
+                    }
+
+                    var dateString = Convert.ToString(value, CultureInfo.InvariantCulture);
+                    if (!string.IsNullOrEmpty(dateString))
+                    {
+                        DateTime parsed;
+                        if (DateTime.TryParse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.None, out parsed))
+                        {
+                            return parsed;
+                        }
+
+                        double oa;
+                        if (double.TryParse(dateString, NumberStyles.Any, CultureInfo.InvariantCulture, out oa))
+                        {
+                            return DateTime.FromOADate(oa);
+                        }
+                    }
+                }
+
                 if (underlying.IsInstanceOfType(value))
                 {
                     return value;
@@ -562,7 +1020,7 @@ namespace LbxyCommonLib.ExcelImport
             }
             catch (Exception ex)
             {
-                var rawValue = raw ?? Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+                var rawValue = rawString;
                 logs.Add(new ExcelImportLogEntry(rowIndex, columnIndex, columnName, "数据类型转换失败: " + ex.Message, rawValue));
                 return DBNull.Value;
             }
@@ -864,7 +1322,17 @@ namespace LbxyCommonLib.ExcelImport
                 decimal d1;
                 if (decimal.TryParse(inner, NumberStyles.Any, CultureInfo.InvariantCulture, out d1))
                 {
-                    return settings.BracketAsNumeric ? (object)(-d1) : (object)("-" + inner);
+                    if (settings.BracketAsNumeric)
+                    {
+                        return (object)(-d1);
+                    }
+
+                    if (settings.BracketNegativeDefaultValue.HasValue)
+                    {
+                        return settings.BracketNegativeDefaultValue.Value;
+                    }
+
+                    return raw;
                 }
 
                 return DBNull.Value;
@@ -901,8 +1369,24 @@ namespace LbxyCommonLib.ExcelImport
         }
     }
 
+    /// <summary>
+    /// 表示 Excel 导入过程中的一条日志记录，如类型转换警告或数值识别为日期等提示信息。
+    /// </summary>
+    /// <remarks>
+    /// Author: LbxyCommonLib Contributors
+    /// Created: 2026-02-22
+    /// Last Modified: 2026-02-22
+    /// </remarks>
     public sealed class ExcelImportLogEntry
     {
+        /// <summary>
+        /// 初始化 <see cref="ExcelImportLogEntry"/> 类型的新实例。
+        /// </summary>
+        /// <param name="rowIndex">相关单元格的行索引（从 0 开始）。</param>
+        /// <param name="columnIndex">相关单元格的列索引（从 0 开始）。</param>
+        /// <param name="columnName">相关列的名称。</param>
+        /// <param name="message">日志消息内容。</param>
+        /// <param name="rawValue">导入前单元格的原始文本值。</param>
         public ExcelImportLogEntry(int rowIndex, int columnIndex, string columnName, string message, string rawValue)
         {
             RowIndex = rowIndex;
@@ -912,27 +1396,61 @@ namespace LbxyCommonLib.ExcelImport
             RawValue = rawValue;
         }
 
+        /// <summary>
+        /// 获取相关单元格的行索引（从 0 开始）。
+        /// </summary>
         public int RowIndex { get; }
 
+        /// <summary>
+        /// 获取相关单元格的列索引（从 0 开始）。
+        /// </summary>
         public int ColumnIndex { get; }
 
+        /// <summary>
+        /// 获取相关列的名称。
+        /// </summary>
         public string ColumnName { get; }
 
+        /// <summary>
+        /// 获取日志消息内容。
+        /// </summary>
         public string Message { get; }
 
+        /// <summary>
+        /// 获取导入前单元格的原始文本值。
+        /// </summary>
         public string RawValue { get; }
     }
 
+    /// <summary>
+    /// 表示预定义 DataTable 填充操作的结果，包含填充后的数据表及导入日志列表。
+    /// </summary>
+    /// <remarks>
+    /// Author: LbxyCommonLib Contributors
+    /// Created: 2026-02-22
+    /// Last Modified: 2026-02-22
+    /// </remarks>
     public sealed class ExcelImportFillResult
     {
+        /// <summary>
+        /// 初始化 <see cref="ExcelImportFillResult"/> 类型的新实例。
+        /// </summary>
+        /// <param name="table">填充完成的 <see cref="DataTable"/> 实例。</param>
+        /// <param name="logs">导入过程中产生的日志条目集合。</param>
         public ExcelImportFillResult(DataTable table, IReadOnlyList<ExcelImportLogEntry> logs)
         {
             Table = table;
             Logs = logs;
         }
 
+        /// <summary>
+        /// 获取填充完成的 <see cref="DataTable"/>。
+        /// </summary>
         public DataTable Table { get; }
 
+        /// <summary>
+        /// 获取导入过程中产生的日志条目集合。
+        /// </summary>
         public IReadOnlyList<ExcelImportLogEntry> Logs { get; }
     }
 }

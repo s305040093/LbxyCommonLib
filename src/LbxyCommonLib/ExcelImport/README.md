@@ -21,6 +21,12 @@ API
 - 基于 ExcelProcessing 模块统一识别格式（扩展名 + 文件头），内部使用 NPOI 针对不同格式选择 HSSF/XSSF 解析器
 - 支持从文件路径和 Stream 两种模式读取；对 10MB 以内单文件，设计目标为解析耗时 ≤ 500ms、额外内存占用不超过文件大小的 3 倍（实际表现取决于运行环境）
 
+共享模式使用说明
+- 从文件路径读取时（ReadToDataTable/ImportExcel 等），内部通过 ExcelProcessing.NpoiWorkbook 以 FileAccess.Read + FileShare.ReadWrite 方式打开文件，避免对已由 Excel 打开的工作簿施加独占锁
+- 当检测到“文件被另一进程占用”的 IO 异常时，会按“首次尝试 + 最多 3 次重试”的策略重新打开文件，每次重试间隔约 200 ms
+- 若所有尝试仍失败，将记录包含完整路径、尝试次数和耗时的 Trace 日志，并抛出 ExcelImportException（ErrorCode=FileLocked），其 ValueSnapshot 中包含 Path、Attempts、ElapsedMs 等诊断信息
+- 对调用方而言，通常建议在捕获 ExcelImportException 后，根据 ErrorCode 区分 FileNotFound、UnsupportedFormat、FileLocked 等场景，并在 FileLocked 分支中提示用户关闭占用该文件的程序或稍后重试
+
 支持的文件格式
 - .xlsx
   - 基于 Open XML 格式，使用 XSSF 解析

@@ -27,12 +27,21 @@ namespace LbxyCommonLib.Networking
     /// <summary>
     /// Provides local IPv4 addresses from active non-virtual network adapters, excluding loopback.
     /// </summary>
+    /// <remarks>
+    /// Author: LbxyCommonLib Contributors
+    /// Created: 2026-02-22
+    /// Last Modified: 2026-02-22
+    /// This helper filters out loopback, tunnel and common virtual adapters (Hyper-V, VMware, vEthernet).
+    /// </remarks>
     public static class LocalIpProvider
     {
         /// <summary>
         /// Gets local IPv4 addresses from active non-virtual adapters (excludes loopback).
         /// </summary>
-        /// <returns>Distinct IPv4 addresses as strings; returns empty list on errors.</returns>
+        /// <returns>
+        /// Distinct IPv4 addresses as strings, ordered lexicographically.
+        /// Returns an empty list when enumeration fails or no candidate adapters are found.
+        /// </returns>
         /// <code>
         /// var ips = LocalIpProvider.GetLocalIPv4Addresses();
         /// </code>
@@ -89,8 +98,13 @@ namespace LbxyCommonLib.Networking
         /// <summary>
         /// Gets local IPv4 addresses asynchronously from active non-virtual adapters (excludes loopback).
         /// </summary>
-        /// <param name="cancellationToken">Cancellation token. If cancelled, returns empty list.</param>
-        /// <returns>Distinct IPv4 addresses as strings; returns empty list on errors or cancellation.</returns>
+        /// <param name="cancellationToken">
+        /// Cancellation token; when cancellation is requested, an empty list is returned.
+        /// </param>
+        /// <returns>
+        /// Distinct IPv4 addresses as strings, ordered lexicographically.
+        /// Returns an empty list on errors or when the operation is cancelled.
+        /// </returns>
         /// <code>
         /// var ips = await LocalIpProvider.GetLocalIPv4AddressesAsync(ct);
         /// </code>

@@ -12,6 +12,12 @@ namespace LbxyCommonLib.ListCompression
     /// <summary>
     /// Provides high-performance, extensible list compression operations.
     /// </summary>
+    /// <remarks>
+    /// Author: LbxyCommonLib Contributors
+    /// Created: 2026-02-22
+    /// Last Modified: 2026-02-22
+    /// The static methods in this class are thread-safe as they do not mutate shared state and only operate on provided inputs.
+    /// </remarks>
     /// <typeparam name="T">Element type.</typeparam>
     public static class ListCompressor<T>
     {

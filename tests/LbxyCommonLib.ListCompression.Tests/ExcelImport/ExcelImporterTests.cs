@@ -39,11 +39,26 @@ namespace LbxyCommonLib.ExcelImport.Tests
         }
 
         [Test]
+        public void ReadXlsx_WithHeader_UsesHeaderRowIndexAndDefaultDataRowIndex()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+            var dt = importer.ReadToDataTable(path, settings);
+
+            Assert.That(settings.HeaderRowIndex, Is.EqualTo(0));
+            Assert.That(settings.DataRowIndex, Is.EqualTo(1));
+            Assert.That(dt.Rows.Count, Is.EqualTo(2));
+            Assert.That(dt.Rows[0][0], Is.EqualTo("Alice"));
+            Assert.That(dt.Rows[1][0], Is.EqualTo("Bob"));
+        }
+
+        [Test]
         public async Task ReadXlsx_NoHeader_Async()
         {
             var path = CreateSimpleXlsx();
             var importer = new ExcelImporter();
-            var settings = new ExcelImportSettings { HasHeader = false };
+            var settings = new ExcelImportSettings { HasHeader = false, DataRowIndex = 0 };
             var dt = await importer.ReadToDataTableAsync(path, settings);
             Assert.That(dt.Rows.Count, Is.GreaterThanOrEqualTo(3)); // includes header as data
         }
@@ -132,6 +147,18 @@ namespace LbxyCommonLib.ExcelImport.Tests
         }
 
         [Test]
+        public void ReadXlsx_FileNotFound_ShouldThrowExcelImportExceptionWithInnerFileNotFound()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "LbxyCommonLibTests_Excel", Guid.NewGuid().ToString("N") + ".xlsx");
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+
+            var ex = Assert.Throws<ExcelImportException>(() => importer.ReadToDataTable(path, settings));
+            Assert.That(ex.ErrorCode, Is.EqualTo(ExcelImportErrorCode.FileNotFound));
+            Assert.That(ex.InnerException, Is.InstanceOf<FileNotFoundException>());
+        }
+
+        [Test]
         public void ReadXls_HeaderAndNegative()
         {
             var path = CreateSimpleXls();
@@ -172,6 +199,40 @@ namespace LbxyCommonLib.ExcelImport.Tests
         }
 
         [Test]
+        public void ReadXlsx_WithHeaderAndCustomDataRowIndex()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true, HeaderRowIndex = 0, DataRowIndex = 2 };
+            var dt = importer.ReadToDataTable(path, settings);
+
+            Assert.That(dt.Rows.Count, Is.EqualTo(1));
+            Assert.That(dt.Rows[0][0], Is.EqualTo("Bob"));
+        }
+
+        [Test]
+        public void ReadXlsx_NoHeader_UsesDataRowIndex()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = false, DataRowIndex = 1 };
+            var dt = importer.ReadToDataTable(path, settings);
+
+            Assert.That(dt.Rows.Count, Is.EqualTo(2));
+            Assert.That(dt.Rows[0][0], Is.EqualTo("Alice"));
+            Assert.That(dt.Rows[1][0], Is.EqualTo("Bob"));
+        }
+
+        [Test]
+        public void ReadXlsx_InvalidHeaderAndDataRowIndex_ShouldThrow()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true, HeaderRowIndex = 1, DataRowIndex = 1 };
+            Assert.Throws<ExcelImportException>(() => importer.ReadToDataTable(path, settings));
+        }
+
+        [Test]
         public void Read_FromInMemoryAdapter_ShouldParseHeaderAndNumbers()
         {
             var cells = new object[,]
@@ -203,6 +264,37 @@ namespace LbxyCommonLib.ExcelImport.Tests
             finally
             {
                 ExcelWorkbookProvider.Current = original;
+            }
+        }
+
+        [Test]
+        public void ReadXlsx_WhenFileOpenedWithSharedReadWrite_ShouldSucceed()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+
+            using (var holder = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite))
+            {
+                var dt = importer.ReadToDataTable(path, settings);
+                Assert.That(dt.Rows.Count, Is.EqualTo(2));
+                Assert.That(dt.Columns.Count, Is.EqualTo(3));
+            }
+        }
+
+        [Test]
+        public void ReadXlsx_WhenFileExclusivelyLocked_ShouldThrowExcelImportExceptionWithFileLocked()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+
+            using (var holder = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                var ex = Assert.Throws<ExcelImportException>(() => importer.ReadToDataTable(path, settings));
+                Assert.That(ex.ErrorCode, Is.EqualTo(ExcelImportErrorCode.FileLocked));
+                StringAssert.Contains("Path=", ex.ValueSnapshot);
+                StringAssert.Contains("Attempts=", ex.ValueSnapshot);
             }
         }
 
@@ -243,64 +335,64 @@ namespace LbxyCommonLib.ExcelImport.Tests
             using (var zip = new ZipArchive(fs, ZipArchiveMode.Create, true))
             {
                 Add(zip, "[Content_Types].xml", @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<Types xmlns=""http://schemas.openxmlformats.org/package/2006/content-types"">
-  <Default Extension=""rels"" ContentType=""application/vnd.openxmlformats-package.relationships+xml""/>
-  <Default Extension=""xml"" ContentType=""application/xml""/>
-  <Override PartName=""/xl/workbook.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml""/>
-  <Override PartName=""/xl/worksheets/sheet1.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml""/>
-  <Override PartName=""/xl/sharedStrings.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml""/>
-</Types>");
+                            <Types xmlns=""http://schemas.openxmlformats.org/package/2006/content-types"">
+                              <Default Extension=""rels"" ContentType=""application/vnd.openxmlformats-package.relationships+xml""/>
+                              <Default Extension=""xml"" ContentType=""application/xml""/>
+                              <Override PartName=""/xl/workbook.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml""/>
+                              <Override PartName=""/xl/worksheets/sheet1.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml""/>
+                              <Override PartName=""/xl/sharedStrings.xml"" ContentType=""application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml""/>
+                            </Types>");
 
                 Add(zip, "_rels/.rels", @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<Relationships xmlns=""http://schemas.openxmlformats.org/package/2006/relationships"">
-  <Relationship Id=""rId1"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"" Target=""xl/workbook.xml""/>
-</Relationships>");
+                            <Relationships xmlns=""http://schemas.openxmlformats.org/package/2006/relationships"">
+                              <Relationship Id=""rId1"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"" Target=""xl/workbook.xml""/>
+                            </Relationships>");
 
                 Add(zip, "xl/workbook.xml", @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<workbook xmlns=""http://schemas.openxmlformats.org/spreadsheetml/2006/main"" xmlns:r=""http://schemas.openxmlformats.org/officeDocument/2006/relationships"">
-  <sheets>
-    <sheet name=""Sheet1"" sheetId=""1"" r:id=""rId1""/>
-  </sheets>
-</workbook>");
+                            <workbook xmlns=""http://schemas.openxmlformats.org/spreadsheetml/2006/main"" xmlns:r=""http://schemas.openxmlformats.org/officeDocument/2006/relationships"">
+                              <sheets>
+                                <sheet name=""Sheet1"" sheetId=""1"" r:id=""rId1""/>
+                              </sheets>
+                            </workbook>");
 
                 Add(zip, "xl/_rels/workbook.xml.rels", @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<Relationships xmlns=""http://schemas.openxmlformats.org/package/2006/relationships"">
-  <Relationship Id=""rId1"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"" Target=""worksheets/sheet1.xml""/>
-  <Relationship Id=""rId2"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings"" Target=""sharedStrings.xml""/>
-</Relationships>");
+                            <Relationships xmlns=""http://schemas.openxmlformats.org/package/2006/relationships"">
+                              <Relationship Id=""rId1"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"" Target=""worksheets/sheet1.xml""/>
+                              <Relationship Id=""rId2"" Type=""http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings"" Target=""sharedStrings.xml""/>
+                            </Relationships>");
 
                 Add(zip, "xl/sharedStrings.xml", @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<sst xmlns=""http://schemas.openxmlformats.org/spreadsheetml/2006/main"" count=""8"" uniqueCount=""8"">
-  <si><t>Name</t></si>
-  <si><t>Amount</t></si>
-  <si><t>Note</t></si>
-  <si><t>Alice</t></si>
-  <si><t>Bob</t></si>
-  <si><t>(678.90)</t></si>
-  <si><t>note-1</t></si>
-  <si><t>note-2</t></si>
-</sst>");
+                            <sst xmlns=""http://schemas.openxmlformats.org/spreadsheetml/2006/main"" count=""8"" uniqueCount=""8"">
+                              <si><t>Name</t></si>
+                              <si><t>Amount</t></si>
+                              <si><t>Note</t></si>
+                              <si><t>Alice</t></si>
+                              <si><t>Bob</t></si>
+                              <si><t>(678.90)</t></si>
+                              <si><t>note-1</t></si>
+                              <si><t>note-2</t></si>
+                            </sst>");
 
                 Add(zip, "xl/worksheets/sheet1.xml", @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<worksheet xmlns=""http://schemas.openxmlformats.org/spreadsheetml/2006/main"">
-  <sheetData>
-    <row r=""1"">
-      <c r=""A1"" t=""s""><v>0</v></c>
-      <c r=""B1"" t=""s""><v>1</v></c>
-      <c r=""C1"" t=""s""><v>2</v></c>
-    </row>
-    <row r=""2"">
-      <c r=""A2"" t=""s""><v>3</v></c>
-      <c r=""B2""><v>-123.45</v></c>
-      <c r=""C2"" t=""s""><v>6</v></c>
-    </row>
-    <row r=""3"">
-      <c r=""A3"" t=""s""><v>4</v></c>
-      <c r=""B3"" t=""s""><v>5</v></c>
-      <c r=""C3"" t=""s""><v>7</v></c>
-    </row>
-  </sheetData>
-</worksheet>");
+                            <worksheet xmlns=""http://schemas.openxmlformats.org/spreadsheetml/2006/main"">
+                              <sheetData>
+                                <row r=""1"">
+                                  <c r=""A1"" t=""s""><v>0</v></c>
+                                  <c r=""B1"" t=""s""><v>1</v></c>
+                                  <c r=""C1"" t=""s""><v>2</v></c>
+                                </row>
+                                <row r=""2"">
+                                  <c r=""A2"" t=""s""><v>3</v></c>
+                                  <c r=""B2""><v>-123.45</v></c>
+                                  <c r=""C2"" t=""s""><v>6</v></c>
+                                </row>
+                                <row r=""3"">
+                                  <c r=""A3"" t=""s""><v>4</v></c>
+                                  <c r=""B3"" t=""s""><v>5</v></c>
+                                  <c r=""C3"" t=""s""><v>7</v></c>
+                                </row>
+                              </sheetData>
+                            </worksheet>");
             }
 
             return temp;

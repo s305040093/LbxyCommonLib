@@ -13,8 +13,34 @@ namespace LbxyCommonLib.FolderLauncher
     using System.Diagnostics;
     using System.IO;
 
+    /// <summary>
+    /// 提供在当前操作系统中打开本地目录的辅助方法。
+    /// </summary>
+    /// <remarks>
+    /// Author: LbxyCommonLib Contributors
+    /// Created: 2026-02-22
+    /// Last Modified: 2026-02-22
+    /// </remarks>
     public static class DirectoryLauncher
     {
+        /// <summary>
+        /// 使用系统默认文件管理器打开指定目录。
+        /// </summary>
+        /// <param name="path">要打开的目录路径，必须是非空的绝对路径。</param>
+        /// <exception cref="ArgumentNullException">当 <paramref name="path"/> 为 null 时抛出。</exception>
+        /// <exception cref="ArgumentException">
+        /// 当 <paramref name="path"/> 为空字符串、不是绝对路径或路径格式无效时抛出。
+        /// </exception>
+        /// <exception cref="DirectoryNotFoundException">当指定目录不存在时抛出。</exception>
+        /// <exception cref="UnauthorizedAccessException">当当前进程对目标目录没有读取权限时抛出。</exception>
+        /// <exception cref="System.ComponentModel.Win32Exception">
+        /// 当启动外壳进程失败（例如找不到关联的外壳或权限不足）时可能抛出。
+        /// </exception>
+        /// <example>
+        /// <code>
+        /// DirectoryLauncher.Open(@"C:\Users\Public");
+        /// </code>
+        /// </example>
         public static void Open(string path)
         {
             ValidatePath(path);
@@ -36,6 +62,14 @@ namespace LbxyCommonLib.FolderLauncher
             }
         }
 
+        /// <summary>
+        /// 尝试使用系统默认文件管理器打开目录，并捕获可能发生的错误。
+        /// </summary>
+        /// <param name="path">要打开的目录路径。</param>
+        /// <param name="errorMessage">
+        /// 当返回值为 true 时为空字符串；当返回值为 false 时包含错误消息。
+        /// </param>
+        /// <returns>目录成功打开返回 true，否则返回 false。</returns>
         public static bool TryOpen(string path, out string errorMessage)
         {
             try
@@ -51,6 +85,15 @@ namespace LbxyCommonLib.FolderLauncher
             }
         }
 
+        /// <summary>
+        /// 验证目录路径是否为非空绝对路径且对应的目录存在。
+        /// </summary>
+        /// <param name="path">要验证的目录路径。</param>
+        /// <exception cref="ArgumentNullException">当 <paramref name="path"/> 为 null 时抛出。</exception>
+        /// <exception cref="ArgumentException">
+        /// 当路径为空字符串、不是绝对路径或规范化失败时抛出。
+        /// </exception>
+        /// <exception cref="DirectoryNotFoundException">当对应目录不存在时抛出。</exception>
         public static void ValidatePath(string path)
         {
             if (path == null)
@@ -87,6 +130,14 @@ namespace LbxyCommonLib.FolderLauncher
             }
         }
 
+        /// <summary>
+        /// 检查当前进程是否对目标目录具有读取访问权限。
+        /// </summary>
+        /// <param name="path">要检查的目录路径。</param>
+        /// <returns>具有读取访问权限返回 true，否则返回 false。</returns>
+        /// <remarks>
+        /// 该方法通过尝试枚举目录项来探测访问权限：若出现 <see cref="UnauthorizedAccessException"/> 或 <see cref="IOException"/>，则视为无访问权限。
+        /// </remarks>
         public static bool HasReadAccess(string path)
         {
             try

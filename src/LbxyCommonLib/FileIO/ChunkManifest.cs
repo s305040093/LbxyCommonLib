@@ -15,17 +15,53 @@ namespace LbxyCommonLib.FileIO
     using System.IO;
     using System.Security.Cryptography;
 
+    /// <summary>
+    /// 表示按固定大小分块计算文件哈希值时使用的清单信息。
+    /// </summary>
+    /// <remarks>
+    /// Author: LbxyCommonLib Contributors
+    /// Created: 2026-02-22
+    /// Last Modified: 2026-02-22
+    /// </remarks>
     public sealed class ChunkManifest
     {
+        /// <summary>
+        /// 获取或设置分块大小（以字节为单位），必须为正整数。
+        /// </summary>
         public int ChunkSize { get; set; }
 
+        /// <summary>
+        /// 获取或设置使用的哈希算法名称，例如 MD5、SHA256 等。
+        /// </summary>
         public string Algorithm { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 获取或设置按照文件顺序计算得到的每个块的哈希值列表。
+        /// </summary>
         public List<byte[]> Hashes { get; set; } = new List<byte[]>();
     }
 
+    /// <summary>
+    /// 提供基于分块哈希的文件完整性校验辅助方法。
+    /// </summary>
     public static class ChunkManifestUtil
     {
+        /// <summary>
+        /// 为指定文件构建分块哈希清单。
+        /// </summary>
+        /// <param name="path">要计算的文件路径。</param>
+        /// <param name="chunkSize">分块大小（字节），必须为正整数。</param>
+        /// <param name="algorithm">哈希算法名称，例如 MD5、SHA256。</param>
+        /// <returns>包含每个块哈希值的 <see cref="ChunkManifest"/> 实例。</returns>
+        /// <exception cref="ArgumentNullException">当 <paramref name="path"/> 或 <paramref name="algorithm"/> 为 null 时抛出。</exception>
+        /// <exception cref="ArgumentOutOfRangeException">当 <paramref name="chunkSize"/> 小于等于 0 时抛出。</exception>
+        /// <exception cref="FileNotFoundException">当文件不存在时抛出。</exception>
+        /// <exception cref="NotSupportedException">当指定的算法名称不受支持时抛出。</exception>
+        /// <example>
+        /// <code>
+        /// var manifest = ChunkManifestUtil.BuildFileManifest("large.bin", 4096, "SHA256");
+        /// </code>
+        /// </example>
         public static ChunkManifest BuildFileManifest(string path, int chunkSize, string algorithm)
         {
             if (path == null)
@@ -76,6 +112,13 @@ namespace LbxyCommonLib.FileIO
             return manifest;
         }
 
+        /// <summary>
+        /// 验证指定文件与给定清单是否一致。
+        /// </summary>
+        /// <param name="path">要验证的文件路径。</param>
+        /// <param name="manifest">预先生成的分块哈希清单。</param>
+        /// <returns>当文件大小及所有块哈希都与清单一致时返回 true，否则返回 false。</returns>
+        /// <exception cref="ArgumentNullException">当 <paramref name="manifest"/> 为 null 时抛出。</exception>
         public static bool VerifyFileAgainstManifest(string path, ChunkManifest manifest)
         {
             if (manifest == null)
