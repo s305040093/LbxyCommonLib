@@ -11,7 +11,9 @@ API
 - ExcelImporter.ReadToDataTable(path, settings) / ReadToDataTableAsync(path, settings, ct)
 - ExcelImporter.ReadToDataTable(stream, settings) / ReadToDataTableAsync(stream, settings, ct)
 - ExcelImporter.ImportExcel(path, settings) / ImportExcel(stream, settings) → object[][]（可直接序列化为 JSON 数组）
-- ExcelImportSettings：SheetName/SheetIndex、HasHeader、HeaderRenameMapByIndex/Name、StartColumnIndex/ColumnCount、DispersedMapByIndex/Letter、EnableBracketNegative、BracketAsNumeric、CustomNegativeRegex
+- ExcelImporter.ColumnNameToIndex(columnName) / ColumnIndexToName(columnIndex)：在 A/Z/AA/AZ/BA/ZZ/AAA/XFD 与 0/25/26/51/52/701/702/16383 之间转换（0 基索引，主要用于内部列位置计算）
+- ExcelColumnConverter.ColumnNameToIndex(columnName) / ColumnIndexToName(columnIndex)：在 A/Z/AA/AZ/BA/ZZ/AAA/XFD 与 1/26/27/52/53/702/703/16384 之间转换（1 基索引，支持大小写输入与去除首尾空白）
+- ExcelImportSettings：SheetName/SheetIndex、HasHeader、HeaderRenameMapByIndex/Name、StartColumnIndex/StartColumnName/ColumnCount、DispersedMapByIndex/Letter、EnableBracketNegative、BracketAsNumeric、CustomNegativeRegex、HeaderPrefix、HeaderPrefixI18nMap、IgnoreEmptyHeader、HeaderStartColumnIndex/HeaderStartColumnName
 
 配置与热重载
 - 建议通过代码注入强类型设置（满足现有 DI 体系）
@@ -42,7 +44,30 @@ API
 
 示例
 ```csharp
-var settings = new ExcelImportSettings { HasHeader = true, SheetName = "Sheet1" };
+var settings = new ExcelImportSettings
+{
+    HasHeader = true,
+    SheetName = "Sheet1",
+    // 可选：自定义空白表头前缀（默认 "Col"）
+    HeaderPrefix = "Column",
+    // 可选：忽略空白表头列
+    IgnoreEmptyHeader = false,
+};
 var importer = new ExcelImporter();
 var table = importer.ReadToDataTable("data.xlsx", settings);
 ```
+
+列名与索引对照示例：
+
+| 列名 | 索引 |
+|------|------|
+| A    | 0    |
+| Z    | 25   |
+| AA   | 26   |
+| AZ   | 51   |
+| BA   | 52   |
+| ZZ   | 701  |
+| AAA  | 702  |
+| XFD  | 16383 |
+
+对于使用 1 基索引（例如直接面向 Excel UI 中的列号）的场景，可以通过 ExcelColumnConverter 获取与上表对应的 1 基索引（A ↔ 1, Z ↔ 26, AA ↔ 27, XFD ↔ 16384）。

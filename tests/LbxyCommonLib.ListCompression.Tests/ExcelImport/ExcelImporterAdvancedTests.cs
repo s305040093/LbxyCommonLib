@@ -184,6 +184,80 @@ namespace LbxyCommonLib.ExcelImport.Tests
         }
 
         [Test]
+        public void ImportAdvanced_FromFilePath_ShouldFillPredefinedTable()
+        {
+            var path = CreateAdvancedXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings
+            {
+                HasHeader = true,
+                HeaderReadMode = ExcelHeaderReadMode.HeaderStartIndex,
+                HeaderStartColumnIndex = 0,
+                HeaderRowIndex = 0,
+                DataRowIndex = 1,
+            };
+
+            var table = new DataTable("Advanced");
+            table.Columns.Add("Name", typeof(string));
+            table.Columns.Add("Amount", typeof(decimal));
+            table.Columns.Add("Note", typeof(string));
+
+            var result = importer.ImportAdvanced(path, settings, table);
+
+            Assert.That(result.Table.Rows.Count, Is.EqualTo(2));
+            Assert.That(result.Table.Rows[0]["Name"], Is.EqualTo("Alice"));
+            Assert.That(result.Table.Rows[0]["Amount"], Is.EqualTo(-123.45m));
+            Assert.That(result.Table.Rows[0]["Note"], Is.EqualTo("note-1"));
+            Assert.That(result.Table.Rows[1]["Name"], Is.EqualTo("Bob"));
+            Assert.That(result.Table.Rows[1]["Amount"], Is.EqualTo(-678.90m));
+            Assert.That(result.Table.Rows[1]["Note"], Is.EqualTo("note-2"));
+        }
+
+        [Test]
+        public void ImportAdvanced_HeaderRowIndexEqualDataRowIndex_ShouldThrowArgumentException()
+        {
+            var path = CreateAdvancedXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings
+            {
+                HasHeader = true,
+                HeaderReadMode = ExcelHeaderReadMode.HeaderStartIndex,
+                HeaderStartColumnIndex = 0,
+                HeaderRowIndex = 1,
+                DataRowIndex = 1,
+            };
+
+            var table = new DataTable("Advanced");
+            table.Columns.Add("Name", typeof(string));
+            table.Columns.Add("Amount", typeof(decimal));
+            table.Columns.Add("Note", typeof(string));
+
+            Assert.Throws<ArgumentException>(() => importer.ImportAdvanced(path, settings, table));
+        }
+
+        [Test]
+        public void ImportAdvanced_HeaderRowIndexGreaterThanDataRowIndex_ShouldThrowArgumentException()
+        {
+            var path = CreateAdvancedXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings
+            {
+                HasHeader = true,
+                HeaderReadMode = ExcelHeaderReadMode.HeaderStartIndex,
+                HeaderStartColumnIndex = 0,
+                HeaderRowIndex = 2,
+                DataRowIndex = 1,
+            };
+
+            var table = new DataTable("Advanced");
+            table.Columns.Add("Name", typeof(string));
+            table.Columns.Add("Amount", typeof(decimal));
+            table.Columns.Add("Note", typeof(string));
+
+            Assert.Throws<ArgumentException>(() => importer.ImportAdvanced(path, settings, table));
+        }
+
+        [Test]
         public void FillPredefinedDataTable_MixedDataTypes_ShouldConvertCorrectly()
         {
             var path = CreateDataTypeRichXlsx();

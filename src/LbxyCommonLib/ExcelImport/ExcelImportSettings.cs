@@ -64,7 +64,7 @@ namespace LbxyCommonLib.ExcelImport
 
         /// <summary>
         /// 要读取的工作表索引（从 0 开始）；当 <see cref="SheetName"/> 为空或未匹配到目标工作表时生效。
-        /// 若 SheetName 和 SheetIndex 均未设置，则默认读取第一个工作表。
+        /// 若 SheetName 和 SheetIndex 均未设置，则默认读取当前激活的工作表（对于默认基于 NPOI 的实现而言）。
         /// </summary>
         public int? SheetIndex { get; set; }
 
@@ -107,6 +107,8 @@ namespace LbxyCommonLib.ExcelImport
         /// </summary>
         public int? StartColumnIndex { get; set; }
 
+        public string StartColumnName { get; set; }
+
         /// <summary>
         /// 要读取的列数；当为 null 时从 <see cref="StartColumnIndex"/> 指定位置一直读取到最后一列。
         /// </summary>
@@ -140,6 +142,8 @@ namespace LbxyCommonLib.ExcelImport
         /// </summary>
         public int? HeaderStartColumnIndex { get; set; }
 
+        public string HeaderStartColumnName { get; set; }
+
         /// <summary>
         /// 指示是否启用括号负数解析，例如将 "(123.45)" 解析为 -123.45，默认值为 true。
         /// </summary>
@@ -171,6 +175,27 @@ namespace LbxyCommonLib.ExcelImport
         /// 自定义负数匹配正则表达式，用于扩展括号负数之外的特殊格式。
         /// </summary>
         public string CustomNegativeRegex { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 当表头单元格为空或仅包含空白字符时，用于生成默认列名的前缀。
+        /// 默认值为 "Col"，生成的列名格式为 "Col1"、"Col2" 等。
+        /// 若同时配置 <see cref="HeaderPrefixI18nMap"/>，则会优先按当前区域性从映射表中解析前缀。
+        /// </summary>
+        public string HeaderPrefix { get; set; } = "Col";
+
+        /// <summary>
+        /// 用于多语言环境的表头前缀映射表，键为区域性名称（例如 "zh-CN"、"en-US" 或 "en"），值为对应语言下使用的前缀文本。
+        /// 当该映射表非空时，将按照当前 <see cref="System.Globalization.CultureInfo.CurrentUICulture"/> 的 Name 和两位语言代码依次查找匹配前缀；
+        /// 若均未匹配到，则回退到 <see cref="HeaderPrefix"/>。
+        /// </summary>
+        public Dictionary<string, string> HeaderPrefixI18nMap { get; set; }
+
+        /// <summary>
+        /// 指示在存在表头行且某些列表头为空白（Trim 后长度为 0）时，是否忽略这些列。
+        /// 当为 false（默认）时，空白表头列会参与导入，并自动生成默认列名；
+        /// 当为 true 时，解析阶段将跳过所有空白表头列，最终导入的 DataTable 中不会包含这些列及其数据。
+        /// </summary>
+        public bool IgnoreEmptyHeader { get; set; }
 
         /// <summary>
         /// 表头所在行的行索引（从 0 开始），默认值为 0。
@@ -228,7 +253,7 @@ namespace LbxyCommonLib.ExcelImport
         /// </summary>
         public ExcelImportSettings()
         {
-            hasHeader = true;
+            HasHeader = true;
             EnableBracketNegative = true;
             BracketAsNumeric = true;
             HeaderRenameMapByIndex = new Dictionary<int, string>();
@@ -237,8 +262,10 @@ namespace LbxyCommonLib.ExcelImport
             DispersedMapByIndex = new Dictionary<int, string>();
             HeaderReadMode = ExcelHeaderReadMode.None;
             HeaderIndexList = new List<int>();
-            headerRowIndex = 0;
-            dataRowIndex = 1;
+            HeaderPrefixI18nMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            HeaderRowIndex = 0;
+            StartColumnName = string.Empty;
+            HeaderStartColumnName = string.Empty;
         }
     }
 }

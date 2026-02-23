@@ -56,6 +56,11 @@ namespace LbxyCommonLib.ExcelImport
         /// Excel 文件被其他进程独占锁定，无法在共享读取模式下成功打开。
         /// </summary>
         FileLocked,
+
+        /// <summary>
+        /// 指定的分块行列数无法整除数据区域的总行列数。
+        /// </summary>
+        BlockRemainderNotDivisible,
     }
 
     /// <summary>

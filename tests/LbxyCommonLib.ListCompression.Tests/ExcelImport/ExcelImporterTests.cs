@@ -17,6 +17,439 @@ namespace LbxyCommonLib.ExcelImport.Tests
     public sealed class ExcelImporterTests
     {
         [Test]
+        public void ImportExcel_WithMatrixOptions_StartRowAndColumn()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+
+            var options = new ExcelImporter.MatrixExportOptions
+            {
+                StartRowIndex = 1,
+                StartColumnIndex = 1,
+            };
+
+            var matrix = importer.ImportExcel(path, settings, options);
+
+            Assert.That(matrix.Length, Is.EqualTo(1));
+            Assert.That(matrix[0].Length, Is.EqualTo(2));
+            Assert.That(matrix[0][0], Is.EqualTo(-678.90m));
+            Assert.That(matrix[0][1], Is.EqualTo("note-2"));
+        }
+
+        [Test]
+        public void ImportExcelBlocks_WithBlockSize_AndOrderTopDownLeftRight()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+
+            var options = new ExcelImporter.MatrixExportOptions
+            {
+                StartRowIndex = 0,
+                StartColumnIndex = 0,
+                RowCount = 2,
+                ColumnCount = 3,
+                BlockRowCount = 1,
+                BlockColumnCount = 2,
+                RemainderMode = ExcelImporter.MatrixRemainderMode.Fill,
+                BlockTraversalOrder = ExcelImporter.MatrixBlockTraversalOrder.TopDownLeftRight,
+            };
+
+            var blocks = importer.ImportExcelBlocks(path, settings, options);
+
+            Assert.That(blocks.Count, Is.EqualTo(4));
+
+            var first = blocks[0];
+            Assert.That(first.Length, Is.EqualTo(1));
+            Assert.That(first[0].Length, Is.EqualTo(2));
+            Assert.That(first[0][0], Is.EqualTo("Alice"));
+            Assert.That(first[0][1], Is.EqualTo(-123.45m));
+
+            var second = blocks[1];
+            Assert.That(second.Length, Is.EqualTo(1));
+            Assert.That(second[0].Length, Is.EqualTo(2));
+            Assert.That(second[0][0], Is.EqualTo("note-1"));
+            Assert.That(second[0][1], Is.EqualTo(string.Empty));
+
+            var third = blocks[2];
+            Assert.That(third.Length, Is.EqualTo(1));
+            Assert.That(third[0].Length, Is.EqualTo(2));
+            Assert.That(third[0][0], Is.EqualTo("Bob"));
+            Assert.That(third[0][1], Is.EqualTo(-678.90m));
+
+            var fourth = blocks[3];
+            Assert.That(fourth.Length, Is.EqualTo(1));
+            Assert.That(fourth[0].Length, Is.EqualTo(2));
+            Assert.That(fourth[0][0], Is.EqualTo("note-2"));
+            Assert.That(fourth[0][1], Is.EqualTo(string.Empty));
+        }
+
+        [Test]
+        public void ImportExcelBlocks_WithBlockSize_AndOrderLeftRightTopDown()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+
+            var options = new ExcelImporter.MatrixExportOptions
+            {
+                StartRowIndex = 0,
+                StartColumnIndex = 0,
+                RowCount = 2,
+                ColumnCount = 3,
+                BlockRowCount = 1,
+                BlockColumnCount = 2,
+                RemainderMode = ExcelImporter.MatrixRemainderMode.Fill,
+                BlockTraversalOrder = ExcelImporter.MatrixBlockTraversalOrder.LeftRightTopDown,
+            };
+
+            var blocks = importer.ImportExcelBlocks(path, settings, options);
+
+            Assert.That(blocks.Count, Is.EqualTo(4));
+
+            var first = blocks[0];
+            Assert.That(first.Length, Is.EqualTo(1));
+            Assert.That(first[0].Length, Is.EqualTo(2));
+            Assert.That(first[0][0], Is.EqualTo("Alice"));
+            Assert.That(first[0][1], Is.EqualTo(-123.45m));
+
+            var second = blocks[1];
+            Assert.That(second.Length, Is.EqualTo(1));
+            Assert.That(second[0].Length, Is.EqualTo(2));
+            Assert.That(second[0][0], Is.EqualTo("Bob"));
+            Assert.That(second[0][1], Is.EqualTo(-678.90m));
+
+            var third = blocks[2];
+            Assert.That(third.Length, Is.EqualTo(1));
+            Assert.That(third[0].Length, Is.EqualTo(2));
+            Assert.That(third[0][0], Is.EqualTo("note-1"));
+            Assert.That(third[0][1], Is.EqualTo(string.Empty));
+
+            var fourth = blocks[3];
+            Assert.That(fourth.Length, Is.EqualTo(1));
+            Assert.That(fourth[0].Length, Is.EqualTo(2));
+            Assert.That(fourth[0][0], Is.EqualTo("note-2"));
+            Assert.That(fourth[0][1], Is.EqualTo(string.Empty));
+        }
+
+        [Test]
+        public void ImportExcelBlocksAndMerge_WithAppendStrategy_ShouldConcatenateAllBlockRows()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+
+            var options = new ExcelImporter.MatrixExportOptions
+            {
+                StartRowIndex = 0,
+                StartColumnIndex = 0,
+                RowCount = 2,
+                ColumnCount = 3,
+                BlockRowCount = 1,
+                BlockColumnCount = 2,
+                RemainderMode = ExcelImporter.MatrixRemainderMode.Fill,
+                BlockTraversalOrder = ExcelImporter.MatrixBlockTraversalOrder.TopDownLeftRight,
+            };
+
+            var mergeOptions = new ExcelBlockMergeOptions
+            {
+                ConflictStrategy = ExcelBlockMergeConflictStrategy.Append,
+            };
+
+            var result = importer.ImportExcelBlocksAndMerge(path, settings, options, mergeOptions);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Table.Rows.Count, Is.EqualTo(4));
+            Assert.That(result.Table.Columns.Count, Is.EqualTo(2));
+
+            Assert.That(result.Table.Columns[0].ColumnName, Is.EqualTo("Name"));
+            Assert.That(result.Table.Columns[1].ColumnName, Is.EqualTo("Amount"));
+
+            Assert.That(result.Table.Rows[0][0], Is.EqualTo("Alice"));
+            Assert.That(result.Table.Rows[0][1], Is.EqualTo(-123.45m));
+
+            Assert.That(result.Table.Rows[1][0], Is.EqualTo("note-1"));
+            Assert.That(result.Table.Rows[1][1], Is.EqualTo(string.Empty));
+
+            Assert.That(result.Table.Rows[2][0], Is.EqualTo("Bob"));
+            Assert.That(result.Table.Rows[2][1], Is.EqualTo(-678.90m));
+
+            Assert.That(result.Table.Rows[3][0], Is.EqualTo("note-2"));
+            Assert.That(result.Table.Rows[3][1], Is.EqualTo(string.Empty));
+
+            Assert.That(result.Statistics.TotalBlocks, Is.EqualTo(4));
+            Assert.That(result.Statistics.SuccessfulBlocks, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void ImportExcelBlocksAndMerge_WithAppendStrategy_Xls_ShouldConcatenateAllBlockRows()
+        {
+            var path = CreateSimpleXls();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+
+            var options = new ExcelImporter.MatrixExportOptions
+            {
+                StartRowIndex = 0,
+                StartColumnIndex = 0,
+                RowCount = 2,
+                ColumnCount = 3,
+                BlockRowCount = 1,
+                BlockColumnCount = 2,
+                RemainderMode = ExcelImporter.MatrixRemainderMode.Fill,
+                BlockTraversalOrder = ExcelImporter.MatrixBlockTraversalOrder.TopDownLeftRight,
+            };
+
+            var mergeOptions = new ExcelBlockMergeOptions
+            {
+                ConflictStrategy = ExcelBlockMergeConflictStrategy.Append,
+            };
+
+            var result = importer.ImportExcelBlocksAndMerge(path, settings, options, mergeOptions);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Table.Rows.Count, Is.EqualTo(4));
+            Assert.That(result.Table.Columns.Count, Is.EqualTo(2));
+
+            Assert.That(result.Table.Columns[0].ColumnName, Is.EqualTo("Name"));
+            Assert.That(result.Table.Columns[1].ColumnName, Is.EqualTo("Amount"));
+
+            Assert.That(result.Table.Rows[0][0], Is.EqualTo("Alice"));
+            Assert.That(result.Table.Rows[0][1], Is.EqualTo(-123.45m));
+
+            Assert.That(result.Table.Rows[1][0], Is.EqualTo("note-1"));
+            Assert.That(result.Table.Rows[1][1], Is.EqualTo(string.Empty));
+
+            Assert.That(result.Table.Rows[2][0], Is.EqualTo("Bob"));
+            Assert.That(result.Table.Rows[2][1], Is.EqualTo(-678.90m));
+
+            Assert.That(result.Table.Rows[3][0], Is.EqualTo("note-2"));
+            Assert.That(result.Table.Rows[3][1], Is.EqualTo(string.Empty));
+
+            Assert.That(result.Statistics.TotalBlocks, Is.EqualTo(4));
+            Assert.That(result.Statistics.SuccessfulBlocks, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void ImportExcelBlocksAndMerge_WithAppendStrategy_Xlsm_ShouldConcatenateAllBlockRows()
+        {
+            var path = CreateSimpleXlsm();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+
+            var options = new ExcelImporter.MatrixExportOptions
+            {
+                StartRowIndex = 0,
+                StartColumnIndex = 0,
+                RowCount = 2,
+                ColumnCount = 3,
+                BlockRowCount = 1,
+                BlockColumnCount = 2,
+                RemainderMode = ExcelImporter.MatrixRemainderMode.Fill,
+                BlockTraversalOrder = ExcelImporter.MatrixBlockTraversalOrder.TopDownLeftRight,
+            };
+
+            var mergeOptions = new ExcelBlockMergeOptions
+            {
+                ConflictStrategy = ExcelBlockMergeConflictStrategy.Append,
+            };
+
+            var result = importer.ImportExcelBlocksAndMerge(path, settings, options, mergeOptions);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Table.Rows.Count, Is.EqualTo(4));
+            Assert.That(result.Table.Columns.Count, Is.EqualTo(2));
+
+            Assert.That(result.Table.Columns[0].ColumnName, Is.EqualTo("Name"));
+            Assert.That(result.Table.Columns[1].ColumnName, Is.EqualTo("Amount"));
+
+            Assert.That(result.Table.Rows[0][0], Is.EqualTo("Alice"));
+            Assert.That(result.Table.Rows[0][1], Is.EqualTo(-123.45m));
+
+            Assert.That(result.Table.Rows[1][0], Is.EqualTo("note-1"));
+            Assert.That(result.Table.Rows[1][1], Is.EqualTo(string.Empty));
+
+            Assert.That(result.Table.Rows[2][0], Is.EqualTo("Bob"));
+            Assert.That(result.Table.Rows[2][1], Is.EqualTo(-678.90m));
+
+            Assert.That(result.Table.Rows[3][0], Is.EqualTo("note-2"));
+            Assert.That(result.Table.Rows[3][1], Is.EqualTo(string.Empty));
+
+            Assert.That(result.Statistics.TotalBlocks, Is.EqualTo(4));
+            Assert.That(result.Statistics.SuccessfulBlocks, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void ExcelBlockMergeResult_ShouldCountTypeConversionFailures_FromLogs()
+        {
+            var table = new DataTable("t");
+            var logs = new System.Collections.Generic.List<ExcelImportLogEntry>
+            {
+                new ExcelImportLogEntry(1, 1, "Amount", "数据类型转换失败: invalid value", "abc"),
+                new ExcelImportLogEntry(2, 1, "Amount", "其他日志", "def"),
+            };
+
+            var statistics = new ExcelBlockMergeStatistics();
+            var result = new ExcelBlockMergeResult(table, logs, statistics);
+
+            Assert.That(result.Statistics.TypeConversionFailureCount, Is.EqualTo(1));
+        }
+
+        private sealed class TestTruncateRemainderHandler : ExcelImporter.IMatrixRemainderHandler
+        {
+            public ExcelImporter.MatrixRemainderAction Handle(ExcelImporter.MatrixRemainderContext context)
+            {
+                return ExcelImporter.MatrixRemainderAction.Truncate;
+            }
+        }
+
+        [Test]
+        public void ImportExcelBlocks_RemainderModeError_ShouldThrow()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+
+            var options = new ExcelImporter.MatrixExportOptions
+            {
+                StartRowIndex = 0,
+                StartColumnIndex = 0,
+                RowCount = 2,
+                ColumnCount = 3,
+                BlockRowCount = 2,
+                BlockColumnCount = 2,
+                RemainderMode = ExcelImporter.MatrixRemainderMode.Error,
+            };
+
+            var ex = Assert.Throws<ExcelImportException>(() => importer.ImportExcelBlocks(path, settings, options));
+            Assert.That(ex.ErrorCode, Is.EqualTo(ExcelImportErrorCode.BlockRemainderNotDivisible));
+        }
+
+        [Test]
+        public void ImportExcelBlocks_RemainderModePrompt_TruncateViaHandler()
+        {
+            var path = CreateSimpleXlsx();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+
+            var originalHandler = ExcelImporter.RemainderHandler;
+            try
+            {
+                ExcelImporter.RemainderHandler = new TestTruncateRemainderHandler();
+
+                var options = new ExcelImporter.MatrixExportOptions
+                {
+                    StartRowIndex = 0,
+                    StartColumnIndex = 0,
+                    RowCount = 2,
+                    ColumnCount = 3,
+                    BlockRowCount = 2,
+                    BlockColumnCount = 2,
+                    RemainderMode = ExcelImporter.MatrixRemainderMode.Prompt,
+                };
+
+                var blocks = importer.ImportExcelBlocks(path, settings, options);
+
+                Assert.That(blocks.Count, Is.EqualTo(1));
+                var block = blocks[0];
+                Assert.That(block.Length, Is.EqualTo(2));
+                Assert.That(block[0].Length, Is.EqualTo(2));
+                Assert.That(block[1].Length, Is.EqualTo(2));
+                Assert.That(block[0][0], Is.EqualTo("Alice"));
+                Assert.That(block[0][1], Is.EqualTo(-123.45m));
+                Assert.That(block[1][0], Is.EqualTo("Bob"));
+                Assert.That(block[1][1], Is.EqualTo(-678.90m));
+            }
+            finally
+            {
+                ExcelImporter.RemainderHandler = originalHandler;
+            }
+        }
+
+        [Test]
+        public void ReadToDataTable_DefaultSheet_ShouldUseActiveSheet_WhenNoSheetSpecified()
+        {
+            var path = CreateMultiSheetXlsxWithActiveSecond();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings
+            {
+                HasHeader = true,
+            };
+
+            var table = importer.ReadToDataTable(path, settings);
+
+            Assert.That(table.Rows.Count, Is.EqualTo(1));
+            Assert.That(table.Columns.Count, Is.EqualTo(2));
+            Assert.That(table.Rows[0][0], Is.EqualTo("Active"));
+            Assert.That(table.Rows[0][1], Is.EqualTo(2d));
+        }
+
+        [Test]
+        public void ReadToDataTable_WithSheetIndex_ShouldOverrideActiveSheet()
+        {
+            var path = CreateMultiSheetXlsxWithActiveSecond();
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings
+            {
+                HasHeader = true,
+                SheetIndex = 0,
+            };
+
+            var table = importer.ReadToDataTable(path, settings);
+
+            Assert.That(table.Rows.Count, Is.EqualTo(1));
+            Assert.That(table.Columns.Count, Is.EqualTo(2));
+            Assert.That(table.Rows[0][0], Is.EqualTo("First"));
+            Assert.That(table.Rows[0][1], Is.EqualTo(1d));
+        }
+
+        [Test]
+        public void Open_GXB()
+        {
+            var path = "C:\\Users\\netc\\Documents\\GXB.XLSX";
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings
+            {
+                HasHeader = false,
+            };
+
+
+            var table = new DataTable("Advanced");
+            table.Columns.Add("Amount", typeof(string));
+            table.Columns.Add("Note", typeof(string));
+
+            var result = importer.ReadToDataTable(path, settings);
+
+            //Assert.That(result.Table.Rows.Count, Is.EqualTo(2));
+            //Assert.That(result.Table.Rows[0]["Amount"], Is.EqualTo(-123.45m));
+            //Assert.That(result.Table.Rows[0]["Note"], Is.EqualTo("note-1"));
+            //Assert.That(result.Table.Rows[1]["Amount"], Is.EqualTo(-678.90m));
+            //Assert.That(result.Table.Rows[1]["Note"], Is.EqualTo("note-2"));
+        }
+
+        [Test]
+        public void ExcelImportSettings_HeaderRowIndexChange_ShouldUpdateDefaultDataRowIndex()
+        {
+            var settings = new ExcelImportSettings { HasHeader = true };
+            Assert.That(settings.HeaderRowIndex, Is.EqualTo(0));
+            Assert.That(settings.DataRowIndex, Is.EqualTo(1));
+
+            settings.HeaderRowIndex = 2;
+
+            Assert.That(settings.HeaderRowIndex, Is.EqualTo(2));
+            Assert.That(settings.DataRowIndex, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void ExcelImportSettings_NoHeader_DefaultDataRowIndex_ShouldBeOne()
+        {
+            var settings = new ExcelImportSettings { HasHeader = false };
+            Assert.That(settings.HasHeader, Is.False);
+            Assert.That(settings.DataRowIndex, Is.EqualTo(1));
+        }
+
+        [Test]
         public void ReadXlsx_HeaderAndNegative()
         {
             var path = CreateSimpleXlsx();
@@ -283,6 +716,171 @@ namespace LbxyCommonLib.ExcelImport.Tests
         }
 
         [Test]
+        public void ReadXlsx_Header_AllEmpty_ShouldUseDefaultNames()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "LbxyCommonLibTests_Excel", Guid.NewGuid().ToString("N") + "_EmptyHeader.xlsx");
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            using (var fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+            {
+                IWorkbook wb = new XSSFWorkbook();
+                var sheet = wb.CreateSheet("Sheet1");
+                var header = sheet.CreateRow(0);
+                header.CreateCell(0).SetCellValue(string.Empty);
+                header.CreateCell(1).SetCellValue(string.Empty);
+                header.CreateCell(2).SetCellValue(string.Empty);
+
+                var row1 = sheet.CreateRow(1);
+                row1.CreateCell(0).SetCellValue("A");
+                row1.CreateCell(1).SetCellValue("1");
+                row1.CreateCell(2).SetCellValue("X");
+
+                wb.Write(fs);
+            }
+
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+            var dt = importer.ReadToDataTable(path, settings);
+
+            Assert.That(dt.Columns[0].ColumnName, Is.EqualTo("Col1"));
+            Assert.That(dt.Columns[1].ColumnName, Is.EqualTo("Col2"));
+            Assert.That(dt.Columns[2].ColumnName, Is.EqualTo("Col3"));
+        }
+
+        [Test]
+        public void ReadXlsx_Header_PartialEmptyAndWhitespace_ShouldUseDefaultNames()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "LbxyCommonLibTests_Excel", Guid.NewGuid().ToString("N") + "_PartialEmptyHeader.xlsx");
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            using (var fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+            {
+                IWorkbook wb = new XSSFWorkbook();
+                var sheet = wb.CreateSheet("Sheet1");
+                var header = sheet.CreateRow(0);
+                header.CreateCell(0).SetCellValue("Name");
+                header.CreateCell(1).SetCellValue("   ");
+                header.CreateCell(2).SetCellValue(null as string);
+
+                var row1 = sheet.CreateRow(1);
+                row1.CreateCell(0).SetCellValue("Alice");
+                row1.CreateCell(1).SetCellValue("10");
+                row1.CreateCell(2).SetCellValue("note-1");
+
+                wb.Write(fs);
+            }
+
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+            var dt = importer.ReadToDataTable(path, settings);
+
+            Assert.That(dt.Columns[0].ColumnName, Is.EqualTo("Name"));
+            Assert.That(dt.Columns[1].ColumnName, Is.EqualTo("Col2"));
+            Assert.That(dt.Columns[2].ColumnName, Is.EqualTo("Col3"));
+        }
+
+        [Test]
+        public void ReadXlsx_Header_MixedNormalAndEmpty_ShouldAvoidNameConflicts()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "LbxyCommonLibTests_Excel", Guid.NewGuid().ToString("N") + "_MixedHeader.xlsx");
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            using (var fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+            {
+                IWorkbook wb = new XSSFWorkbook();
+                var sheet = wb.CreateSheet("Sheet1");
+                var header = sheet.CreateRow(0);
+                header.CreateCell(0).SetCellValue("Col1");
+                header.CreateCell(1).SetCellValue(string.Empty);
+                header.CreateCell(2).SetCellValue(" ");
+
+                var row1 = sheet.CreateRow(1);
+                row1.CreateCell(0).SetCellValue("A");
+                row1.CreateCell(1).SetCellValue("B");
+                row1.CreateCell(2).SetCellValue("C");
+
+                wb.Write(fs);
+            }
+
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true };
+            var dt = importer.ReadToDataTable(path, settings);
+
+            Assert.That(dt.Columns[0].ColumnName, Is.EqualTo("Col1"));
+            Assert.That(dt.Columns[1].ColumnName, Is.EqualTo("Col2"));
+            Assert.That(dt.Columns[2].ColumnName, Is.EqualTo("Col3"));
+        }
+
+        [Test]
+        public void ReadXlsx_HeaderPrefix_String_ShouldApplyToEmptyHeaders()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "LbxyCommonLibTests_Excel", Guid.NewGuid().ToString("N") + "_HeaderPrefix.xlsx");
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            using (var fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+            {
+                IWorkbook wb = new XSSFWorkbook();
+                var sheet = wb.CreateSheet("Sheet1");
+                var header = sheet.CreateRow(0);
+                header.CreateCell(0).SetCellValue(string.Empty);
+                header.CreateCell(1).SetCellValue(" ");
+                header.CreateCell(2).SetCellValue(string.Empty);
+
+                var row1 = sheet.CreateRow(1);
+                row1.CreateCell(0).SetCellValue("A");
+                row1.CreateCell(1).SetCellValue("B");
+                row1.CreateCell(2).SetCellValue("C");
+
+                wb.Write(fs);
+            }
+
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true, HeaderPrefix = "Column" };
+            var dt = importer.ReadToDataTable(path, settings);
+
+            Assert.That(dt.Columns[0].ColumnName, Is.EqualTo("Column1"));
+            Assert.That(dt.Columns[1].ColumnName, Is.EqualTo("Column2"));
+            Assert.That(dt.Columns[2].ColumnName, Is.EqualTo("Column3"));
+        }
+
+        [Test]
+        public void ReadXlsx_IgnoreEmptyHeader_ShouldSkipEmptyColumns()
+        {
+            var path = Path.Combine(Path.GetTempPath(), "LbxyCommonLibTests_Excel", Guid.NewGuid().ToString("N") + "_IgnoreEmptyHeader.xlsx");
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            using (var fs = new FileStream(path, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+            {
+                IWorkbook wb = new XSSFWorkbook();
+                var sheet = wb.CreateSheet("Sheet1");
+                var header = sheet.CreateRow(0);
+                header.CreateCell(0).SetCellValue("Name");
+                header.CreateCell(1).SetCellValue(string.Empty);
+                header.CreateCell(2).SetCellValue("Amount");
+
+                var row1 = sheet.CreateRow(1);
+                row1.CreateCell(0).SetCellValue("Alice");
+                row1.CreateCell(1).SetCellValue("Ignored");
+                row1.CreateCell(2).SetCellValue("10.5");
+
+                var row2 = sheet.CreateRow(2);
+                row2.CreateCell(0).SetCellValue("Bob");
+                row2.CreateCell(1).SetCellValue("Ignored2");
+                row2.CreateCell(2).SetCellValue("-3");
+
+                wb.Write(fs);
+            }
+
+            var importer = new ExcelImporter();
+            var settings = new ExcelImportSettings { HasHeader = true, IgnoreEmptyHeader = true };
+            var dt = importer.ReadToDataTable(path, settings);
+
+            Assert.That(dt.Columns.Count, Is.EqualTo(2));
+            Assert.That(dt.Columns[0].ColumnName, Is.EqualTo("Name"));
+            Assert.That(dt.Columns[1].ColumnName, Is.EqualTo("Amount"));
+            Assert.That(dt.Rows.Count, Is.EqualTo(2));
+            Assert.That(dt.Rows[0]["Name"], Is.EqualTo("Alice"));
+            Assert.That(dt.Rows[0]["Amount"], Is.EqualTo(10.5m));
+            Assert.That(dt.Rows[1]["Name"], Is.EqualTo("Bob"));
+            Assert.That(dt.Rows[1]["Amount"], Is.EqualTo(-3m));
+        }
+
+        [Test]
         public void ReadXlsx_WhenFileExclusivelyLocked_ShouldThrowExcelImportExceptionWithFileLocked()
         {
             var path = CreateSimpleXlsx();
@@ -456,6 +1054,37 @@ namespace LbxyCommonLib.ExcelImport.Tests
             return temp;
         }
 
+        private static string CreateMultiSheetXlsxWithActiveSecond()
+        {
+            var temp = Path.Combine(Path.GetTempPath(), "LbxyCommonLibTests_Excel", Guid.NewGuid().ToString("N") + "_multisheet.xlsx");
+            Directory.CreateDirectory(Path.GetDirectoryName(temp));
+            using (var fs = new FileStream(temp, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+            {
+                IWorkbook wb = new XSSFWorkbook();
+
+                var first = wb.CreateSheet("First");
+                var firstHeader = first.CreateRow(0);
+                firstHeader.CreateCell(0).SetCellValue("Name");
+                firstHeader.CreateCell(1).SetCellValue("Value");
+                var firstRow = first.CreateRow(1);
+                firstRow.CreateCell(0).SetCellValue("First");
+                firstRow.CreateCell(1).SetCellValue(1d);
+
+                var second = wb.CreateSheet("Second");
+                var secondHeader = second.CreateRow(0);
+                secondHeader.CreateCell(0).SetCellValue("Name");
+                secondHeader.CreateCell(1).SetCellValue("Value");
+                var secondRow = second.CreateRow(1);
+                secondRow.CreateCell(0).SetCellValue("Active");
+                secondRow.CreateCell(1).SetCellValue(2d);
+
+                wb.SetActiveSheet(1);
+                wb.Write(fs);
+            }
+
+            return temp;
+        }
+
         private static void Add(ZipArchive zip, string path, string content)
         {
             var e = zip.CreateEntry(path);
@@ -610,6 +1239,99 @@ namespace LbxyCommonLib.ExcelImport.Tests
                     return new InMemoryWorkbook(new InMemoryWorksheet(cells));
                 }
             }
+        }
+
+        [Test]
+        public void ColumnNameToIndex_BasicCases_ShouldMatchExpected()
+        {
+            Assert.That(ExcelImporter.ColumnNameToIndex("A"), Is.EqualTo(0));
+            Assert.That(ExcelImporter.ColumnNameToIndex("Z"), Is.EqualTo(25));
+            Assert.That(ExcelImporter.ColumnNameToIndex("AA"), Is.EqualTo(26));
+            Assert.That(ExcelImporter.ColumnNameToIndex("AZ"), Is.EqualTo(51));
+            Assert.That(ExcelImporter.ColumnNameToIndex("BA"), Is.EqualTo(52));
+            Assert.That(ExcelImporter.ColumnNameToIndex("ZZ"), Is.EqualTo(701));
+            Assert.That(ExcelImporter.ColumnNameToIndex("AAA"), Is.EqualTo(702));
+            Assert.That(ExcelImporter.ColumnNameToIndex("XFD"), Is.EqualTo(16383));
+        }
+
+        [Test]
+        public void ColumnIndexToName_BasicCases_ShouldMatchExpected()
+        {
+            Assert.That(ExcelImporter.ColumnIndexToName(0), Is.EqualTo("A"));
+            Assert.That(ExcelImporter.ColumnIndexToName(25), Is.EqualTo("Z"));
+            Assert.That(ExcelImporter.ColumnIndexToName(26), Is.EqualTo("AA"));
+            Assert.That(ExcelImporter.ColumnIndexToName(51), Is.EqualTo("AZ"));
+            Assert.That(ExcelImporter.ColumnIndexToName(52), Is.EqualTo("BA"));
+            Assert.That(ExcelImporter.ColumnIndexToName(701), Is.EqualTo("ZZ"));
+            Assert.That(ExcelImporter.ColumnIndexToName(702), Is.EqualTo("AAA"));
+            Assert.That(ExcelImporter.ColumnIndexToName(16383), Is.EqualTo("XFD"));
+        }
+
+        [Test]
+        public void ColumnNameToIndex_InvalidInputs_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(() => ExcelImporter.ColumnNameToIndex(null));
+            Assert.Throws<ArgumentException>(() => ExcelImporter.ColumnNameToIndex(string.Empty));
+            Assert.Throws<ArgumentException>(() => ExcelImporter.ColumnNameToIndex(" "));
+            Assert.Throws<ArgumentException>(() => ExcelImporter.ColumnNameToIndex("A1"));
+            Assert.Throws<ArgumentException>(() => ExcelImporter.ColumnNameToIndex("a"));
+            Assert.Throws<ArgumentException>(() => ExcelImporter.ColumnNameToIndex("ABCD"));
+        }
+
+        [Test]
+        public void ColumnIndexToName_InvalidInputs_ShouldThrow()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => ExcelImporter.ColumnIndexToName(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => ExcelImporter.ColumnIndexToName(16384));
+        }
+
+        [Test]
+        public void ExcelColumnConverter_BasicConversions_ShouldMatchExpected()
+        {
+            Assert.That(ExcelColumnConverter.ColumnIndexToName(1), Is.EqualTo("A"));
+            Assert.That(ExcelColumnConverter.ColumnIndexToName(26), Is.EqualTo("Z"));
+            Assert.That(ExcelColumnConverter.ColumnIndexToName(27), Is.EqualTo("AA"));
+            Assert.That(ExcelColumnConverter.ColumnIndexToName(52), Is.EqualTo("AZ"));
+            Assert.That(ExcelColumnConverter.ColumnIndexToName(53), Is.EqualTo("BA"));
+            Assert.That(ExcelColumnConverter.ColumnIndexToName(702), Is.EqualTo("ZZ"));
+            Assert.That(ExcelColumnConverter.ColumnIndexToName(703), Is.EqualTo("AAA"));
+            Assert.That(ExcelColumnConverter.ColumnIndexToName(16384), Is.EqualTo("XFD"));
+
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex("A"), Is.EqualTo(1));
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex("Z"), Is.EqualTo(26));
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex("AA"), Is.EqualTo(27));
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex("AZ"), Is.EqualTo(52));
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex("BA"), Is.EqualTo(53));
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex("ZZ"), Is.EqualTo(702));
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex("AAA"), Is.EqualTo(703));
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex("XFD"), Is.EqualTo(16384));
+        }
+
+        [Test]
+        public void ExcelColumnConverter_ShouldBeCaseInsensitiveAndTrimmed()
+        {
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex("a"), Is.EqualTo(1));
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex("z"), Is.EqualTo(26));
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex(" aa "), Is.EqualTo(27));
+            Assert.That(ExcelColumnConverter.ColumnNameToIndex(" xfd "), Is.EqualTo(16384));
+        }
+
+        [Test]
+        public void ExcelColumnConverter_InvalidIndexInputs_ShouldThrow()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => ExcelColumnConverter.ColumnIndexToName(0));
+            Assert.Throws<ArgumentOutOfRangeException>(() => ExcelColumnConverter.ColumnIndexToName(16385));
+        }
+
+        [Test]
+        public void ExcelColumnConverter_InvalidNameInputs_ShouldThrow()
+        {
+            Assert.Throws<ArgumentNullException>(() => ExcelColumnConverter.ColumnNameToIndex(null));
+            Assert.Throws<ArgumentException>(() => ExcelColumnConverter.ColumnNameToIndex(string.Empty));
+            Assert.Throws<ArgumentException>(() => ExcelColumnConverter.ColumnNameToIndex(" "));
+            Assert.Throws<ArgumentOutOfRangeException>(() => ExcelColumnConverter.ColumnNameToIndex("ABCD"));
+            Assert.Throws<ArgumentException>(() => ExcelColumnConverter.ColumnNameToIndex("A1"));
+            Assert.Throws<ArgumentException>(() => ExcelColumnConverter.ColumnNameToIndex("!"));
         }
     }
 }

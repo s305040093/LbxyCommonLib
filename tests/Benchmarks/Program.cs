@@ -130,6 +130,73 @@ namespace Benchmarks
 
             return count;
         }
+
+        public class ExcelImportMatrixBenchmarks
+        {
+            private DataTable table;
+
+            [GlobalSetup]
+            public void Setup()
+            {
+                table = new DataTable("Large");
+                table.Columns.Add("C0", typeof(int));
+                table.Columns.Add("C1", typeof(int));
+                table.Columns.Add("C2", typeof(int));
+                table.Columns.Add("C3", typeof(int));
+                table.Columns.Add("C4", typeof(int));
+
+                for (var i = 0; i < 100000; i++)
+                {
+                    var row = table.NewRow();
+                    row[0] = i;
+                    row[1] = i + 1;
+                    row[2] = i + 2;
+                    row[3] = i + 3;
+                    row[4] = i + 4;
+                    table.Rows.Add(row);
+                }
+            }
+
+            [Benchmark]
+            public object[][] ExportFullMatrix()
+            {
+                var options = new ExcelImporter.MatrixExportOptions
+                {
+                    StartRowIndex = 0,
+                    StartColumnIndex = 0,
+                };
+
+                var method = typeof(ExcelImporter).GetMethod(
+                    "ConvertDataTableToMatrix",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static,
+                    null,
+                    new[] { typeof(DataTable), typeof(ExcelImporter.MatrixExportOptions) },
+                    null);
+
+                return (object[][])method.Invoke(null, new object[] { table, options });
+            }
+
+            [Benchmark]
+            public IReadOnlyList<object[][]> ExportBlocks()
+            {
+                var options = new ExcelImporter.MatrixExportOptions
+                {
+                    StartRowIndex = 0,
+                    StartColumnIndex = 0,
+                    BlockRowCount = 1000,
+                    BlockColumnCount = 5,
+                };
+
+                var method = typeof(ExcelImporter).GetMethod(
+                    "ConvertDataTableToBlocks",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static,
+                    null,
+                    new[] { typeof(DataTable), typeof(ExcelImporter.MatrixExportOptions) },
+                    null);
+
+                return (IReadOnlyList<object[][]>)method.Invoke(null, new object[] { table, options });
+            }
+        }
     }
 
     [MemoryDiagnoser]

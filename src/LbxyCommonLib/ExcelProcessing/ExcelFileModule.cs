@@ -478,6 +478,11 @@ namespace LbxyCommonLib.ExcelProcessing
         /// </summary>
         public string Path { get; }
 
+        public int ActiveSheetIndex
+        {
+            get { return workbook.ActiveSheetIndex; }
+        }
+
         /// <inheritdoc/>
         public IReadOnlyList<string> GetSheetNames()
         {
@@ -591,6 +596,11 @@ namespace LbxyCommonLib.ExcelProcessing
         /// 获取工作簿的逻辑名称或显示用名称。
         /// </summary>
         public string Path { get; }
+
+        public int ActiveSheetIndex
+        {
+            get { return workbook.ActiveSheetIndex; }
+        }
 
         /// <inheritdoc/>
         public IReadOnlyList<string> GetSheetNames()
