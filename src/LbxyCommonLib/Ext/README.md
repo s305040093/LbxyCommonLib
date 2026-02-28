@@ -37,3 +37,28 @@ var cmp = "file10".CompareNatural("file2"); // > 0
 注意事项
 - ReplaceIgnoreCase 采用 Regex.Escape(oldValue) 保证安全
 - SplitLines 对混合换行友好；MergeLines 默认移除空字符串行
+
+# PropertyAccessor / ClassExtensions
+
+PropertyAccessor 用于统一获取属性显示名与高性能属性读写（显示名优先级：XafDisplayName > DisplayName > Display）。
+
+```csharp
+using LbxyCommonLib.Ext;
+
+var displayName = PropertyAccessor.GetDisplayName<MyModel>(nameof(MyModel.Name));
+
+var value = PropertyAccessor.GetValue(model, nameof(MyModel.Name));
+PropertyAccessor.SetValue(model, nameof(MyModel.Name), "new value");
+
+// 也支持用显示名作为 key（当显示名唯一时）
+PropertyAccessor.SetValue(model, displayName, "new value");
+```
+
+ToPropertyDictionary 已基于 PropertyAccessor 做缓存优化：
+
+```csharp
+using LbxyCommonLib.Ext;
+
+var dict1 = model.ToPropertyDictionary(); // key 为属性名
+var dict2 = model.ToPropertyDictionary(options: ClassExtensions.PropertyNameOptions.UseDisplayAttributes); // key 为显示名
+```
