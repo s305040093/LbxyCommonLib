@@ -1,9 +1,9 @@
 <Project>
   <PropertyGroup>
-    <Deterministic>true</Deterministic>
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageOutputPath>$(MSBuildThisFileDirectory)artifacts\\packages</PackageOutputPath>
+    <Deterministic>false</Deterministic>
+    <ContinuousIntegrationBuild>false</ContinuousIntegrationBuild>
+    <!-- <GeneratePackageOnBuild>false</GeneratePackageOnBuild> -->
+    <!-- <PackageOutputPath>$(MSBuildThisFileDirectory)artifacts\packages</PackageOutputPath> -->
     <DebugType>portable</DebugType>
   </PropertyGroup>
 

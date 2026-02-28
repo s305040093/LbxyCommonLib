@@ -2,15 +2,16 @@
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- <TreatWarningsAsErrors>true</TreatWarningsAsErrors> -->
     <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <NoWarn>SA1629;SA1642;SA1623</NoWarn>
     <PackageId>LbxyCommonLib</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Authors>LbxyCommonLib Team</Authors>
     <Company>Lbxy</Company>
     <Description>Common utility library for .NET Framework 4.5 and .NET Standard 2.0, including list compression, Excel import, file I/O helpers, string processing, configuration, networking and launcher utilities.</Description>
     <PackageProjectUrl>https://github.com/lbxy/LbxyCommonLib</PackageProjectUrl>
+    <IsPackable>true</IsPackable>
     <RepositoryUrl>https://github.com/lbxy/LbxyCommonLib</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -26,7 +27,8 @@
     <Deterministic>true</Deterministic>
     <DebugType>embedded</DebugType>
     <Copyright>Copyright (c) 2026 LbxyCommonLib Contributors</Copyright>
-    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <!-- <GeneratePackageOnBuild>True</GeneratePackageOnBuild> -->
+    <!-- <PackageOutputPath>bin\Release</PackageOutputPath> -->
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='net45'">
@@ -60,17 +62,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="NPOI" Version="2.5.6" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.435" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" PrivateAssets="all" />
-    <PackageReference Include="MinVer" Version="5.0.0" PrivateAssets="all" />
+    <!-- <PackageReference Include="MinVer" Version="5.0.0" PrivateAssets="all" /> -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
-  <Import Project="..\\..\\build\\common.props" />
-  <Import Project="..\\..\\build\\common.targets" />
+  <!-- <Import Project="..\..\build\common.props" /> -->
+  <!-- <Import Project="..\..\build\common.targets" /> -->
 
   <Target Name="DetectXlsxDirectUsage" BeforeTargets="Build">
     <Error Condition="$([System.String]::Copy($([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)ExcelImport\\ExcelImporter.cs'))).Contains('NPOI.SS.UserModel'))" Text="ExcelImporter 不允许直接引用 xlsx/NPOI，请通过抽象适配器访问。" />

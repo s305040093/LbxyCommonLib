@@ -28,6 +28,9 @@ namespace LbxyCommonLib.ListCompression.Tests.Ext
 
             [DisplayName("DUPLICATE")]
             public string Duplicate2 { get; set; } = "2";
+
+            [DisplayName("Name With Spaces & Symbols!")]
+            public string SpecialChars { get; set; } = "Special";
         }
 
         [Test]
@@ -36,7 +39,8 @@ namespace LbxyCommonLib.ListCompression.Tests.Ext
             var model = new DisplayNameTestModel();
 
             // 1. GetDisplayName by PropertyName (Explicit useDisplayName: false)
-            Assert.That(PropertyAccessor.GetDisplayName<DisplayNameTestModel>(nameof(DisplayNameTestModel.Name), useDisplayName: false), Is.EqualTo("Display_Name"));
+            // Changed expectation: When useDisplayName is false, GetDisplayName should return the PropertyName ("Name"), not DisplayName ("Display_Name")
+            Assert.That(PropertyAccessor.GetDisplayName<DisplayNameTestModel>(nameof(DisplayNameTestModel.Name), useDisplayName: false), Is.EqualTo(nameof(DisplayNameTestModel.Name)));
 
             // 2. GetValue by PropertyName (Explicit useDisplayName: false)
             Assert.That(PropertyAccessor.GetValue(model, nameof(DisplayNameTestModel.Name), useDisplayName: false), Is.EqualTo("DefaultName"));
@@ -126,22 +130,44 @@ namespace LbxyCommonLib.ListCompression.Tests.Ext
         }
 
         [Test]
-        public void GetDisplayName_UseDisplayName_True_ShouldFailForPropertyName()
+        public void GetDisplayName_WhenNotFound_ShouldReturnInput()
         {
-            // GetDisplayName usually returns input if not found? 
-            // Wait, let's check PropertyAccessor<T>.GetDisplayName logic.
-            // It calls GetMetadata. If GetMetadata returns null, it returns propertyName.
-            // But GetMetadata throws exception? No, GetMetadata returns null.
-            // GetValue/SetValue throw exception if GetMetadata returns null.
-            // GetDisplayName implementation:
-            // var meta = GetMetadata(propertyName, useDisplayName, comparison);
-            // return meta != null ? meta.DisplayName : propertyName;
+            // useDisplayName: true (default) -> Expects DisplayName lookup
+            // If not found (e.g. passing PropertyName "Name" or non-existent property), returns input.
 
-            // So if useDisplayName=true and we pass "Name" (which is not a DisplayName), GetMetadata returns null.
-            // Then it returns "Name".
+            // 1. Passing PropertyName (when it doesn't match a DisplayName)
+            var result1 = PropertyAccessor.GetDisplayName<DisplayNameTestModel>("Name", useDisplayName: true);
+            Assert.That(result1, Is.EqualTo("Name"));
 
-            var result = PropertyAccessor.GetDisplayName<DisplayNameTestModel>("Name", useDisplayName: true);
-            Assert.That(result, Is.EqualTo("Name"));
+            // 2. Passing completely non-existent property
+            var result2 = PropertyAccessor.GetDisplayName<DisplayNameTestModel>("NonExistentProp", useDisplayName: true);
+            Assert.That(result2, Is.EqualTo("NonExistentProp"));
+        }
+
+        [Test]
+        public void GetDisplayName_WithNullOrEmpty_ShouldReturnInput()
+        {
+            // GetDisplayName should handle null/empty gracefully by returning them (as no metadata matches null/empty)
+            Assert.That(PropertyAccessor.GetDisplayName<DisplayNameTestModel>(null), Is.Null);
+            Assert.That(PropertyAccessor.GetDisplayName<DisplayNameTestModel>(string.Empty), Is.EqualTo(string.Empty));
+            Assert.That(PropertyAccessor.GetDisplayName<DisplayNameTestModel>("   "), Is.EqualTo("   "));
+        }
+
+        [Test]
+        public void SpecialCharacters_ShouldWork()
+        {
+            var model = new DisplayNameTestModel();
+            var key = "Name With Spaces & Symbols!";
+
+            // GetValue
+            Assert.That(PropertyAccessor.GetValue(model, key), Is.EqualTo("Special"));
+
+            // SetValue
+            PropertyAccessor.SetValue(model, key, "Updated Special");
+            Assert.That(model.SpecialChars, Is.EqualTo("Updated Special"));
+
+            // GetDisplayName
+            Assert.That(PropertyAccessor.GetDisplayName<DisplayNameTestModel>(key), Is.EqualTo(key));
         }
 
         [Test]

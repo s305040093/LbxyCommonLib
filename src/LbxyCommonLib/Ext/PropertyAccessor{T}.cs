@@ -77,13 +77,21 @@ namespace LbxyCommonLib.Ext
         /// 根据属性名称或显示名称获取显示名称。
         /// </summary>
         /// <param name="propertyName">属性名称或显示名称。</param>
-        /// <param name="useDisplayName">是否强制使用显示名称匹配（默认 true）。</param>
+        /// <param name="useDisplayName">
+        /// 为 <c>true</c> 时返回属性的显示名称（DisplayName）；
+        /// 为 <c>false</c> 时返回属性的原始名称（PropertyName）。
+        /// </param>
         /// <param name="comparison">字符串比较规则（默认 OrdinalIgnoreCase）。</param>
-        /// <returns>显示名称。</returns>
+        /// <returns>匹配成功返回对应的名称；未匹配返回 <paramref name="propertyName"/> 原值。</returns>
         public static string GetDisplayName(string propertyName, bool useDisplayName = true, StringComparison comparison = StringComparison.OrdinalIgnoreCase)
         {
             var meta = GetMetadata(propertyName, useDisplayName, comparison);
-            return meta != null ? meta.DisplayName : propertyName;
+            if (meta == null)
+            {
+                return propertyName;
+            }
+
+            return useDisplayName ? meta.DisplayName : meta.Name;
         }
 
         /// <summary>

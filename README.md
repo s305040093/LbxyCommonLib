@@ -354,6 +354,53 @@ var blocks = importer.ImportExcelBlocks("orders.xlsx", settings, blockOptions);
 // blocks[i] 即第 i 个块，每个块本身是一个 object[][] 子矩阵
 ```
 
+## 电缆规格解析 (CableParser)
+
+提供对电力电缆、控制电缆、变频电缆及对绞电缆规格字符串的高性能解析与结构化映射。
+
+### 功能特性
+
+1. **标准电力电缆**
+   - 支持 `3x25+1x16`、`4x25`（自动映射为3相+1中性）、`5x10`（3相+1中性+1保护）等格式。
+   - 智能识别相线、中性线、保护线。
+
+2. **多并电缆 (Multi-bundle)**
+   - 支持 `2(3×25+1×16)` 格式，其中括号外数字为 `BundleCount`（束数）。
+   - 兼容 `3(3×35+3×6)` 等复杂嵌套结构。
+
+3. **变频电缆 (Variable Frequency)**
+   - 自动识别 `3×S1+3×S2` 模式（如 `3×50+3×25`）为变频电缆。
+   - `IsVariableFrequency` 属性自动置为 `true`。
+
+4. **对绞电缆 (Twisted Pair)**
+   - 支持 `m×2×S`（如 `6×2×1.5`）或 `n×m×2×S` 格式。
+   - `IsTwistedPair` 属性自动置为 `true`，并解析对数、每对芯数。
+
+5. **高性能与鲁棒性**
+   - 预编译正则（RegexOptions.Compiled）与超时保护（1秒）。
+   - 单条解析耗时 < 5μs（BenchmarkDotNet 实测）。
+   - 归一化处理：自动兼容 `x`, `X`, `*`, `×` 以及中文括号。
+
+### 使用示例
+
+```csharp
+using LbxyCommonLib.Cable;
+
+var parser = new CableParser();
+
+// 1. 标准电力电缆
+var spec1 = parser.Parse("YJV", "4x25");
+// Result: Phase=3*25, Neutral=1*25, Bundle=1
+
+// 2. 多并变频电缆
+var spec2 = parser.Parse("BPYJV", "2(3x50+3x25)");
+// Result: Bundle=2, IsVF=true, Phase=3*50, VfShield=3*25
+
+// 3. 对绞电缆
+var spec3 = parser.Parse("DJYPV", "6x2x1.5");
+// Result: IsTP=true, Pairs=6, CoresPerPair=2, Section=1.5
+```
+
 ## 贡献指南
 
 - 使用最新的 .NET SDK（项目通过 `global.json` 固定了版本）

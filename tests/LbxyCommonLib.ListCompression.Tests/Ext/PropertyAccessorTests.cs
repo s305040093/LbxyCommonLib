@@ -33,11 +33,35 @@ namespace LbxyCommonLib.ListCompression.Tests.Ext
         public void GetDisplayName_ShouldFollowPriority()
         {
             // Xaf > DisplayName > Display > Name
-            // Use useDisplayName: false to lookup by PropertyName and get the resolved DisplayName
-            Assert.That(PropertyAccessor.GetDisplayName<TestModel>(nameof(TestModel.Code), useDisplayName: false), Is.EqualTo("Code_Xaf"));
-            Assert.That(PropertyAccessor.GetDisplayName<TestModel>(nameof(TestModel.Name), useDisplayName: false), Is.EqualTo("Name_Display"));
-            Assert.That(PropertyAccessor.GetDisplayName<TestModel>(nameof(TestModel.Age), useDisplayName: false), Is.EqualTo("Age_Display"));
-            Assert.That(PropertyAccessor.GetDisplayName<TestModel>(nameof(TestModel.Date), useDisplayName: false), Is.EqualTo("Date"));
+            // Use useDisplayName: false to lookup by PropertyName and get the resolved PropertyName (which is the input itself in this case, but verified via metadata)
+            Assert.That(PropertyAccessor.GetDisplayName<TestModel>(nameof(TestModel.Code), useDisplayName: false), Is.EqualTo(nameof(TestModel.Code)));
+
+            // useDisplayName: true (Default) -> Returns DisplayName
+            Assert.That(PropertyAccessor.GetDisplayName<TestModel>(nameof(TestModel.Code), useDisplayName: true), Is.EqualTo(nameof(TestModel.Code))); // Input "Code" is not a DisplayName, so returns input "Code"
+            Assert.That(PropertyAccessor.GetDisplayName<TestModel>("Code_Xaf", useDisplayName: true), Is.EqualTo("Code_Xaf"));
+
+            Assert.That(PropertyAccessor.GetDisplayName<TestModel>(nameof(TestModel.Name), useDisplayName: false), Is.EqualTo(nameof(TestModel.Name)));
+            Assert.That(PropertyAccessor.GetDisplayName<TestModel>(nameof(TestModel.Age), useDisplayName: false), Is.EqualTo(nameof(TestModel.Age)));
+            Assert.That(PropertyAccessor.GetDisplayName<TestModel>(nameof(TestModel.Date), useDisplayName: false), Is.EqualTo(nameof(TestModel.Date)));
+        }
+
+        [Test]
+        public void GetDisplayName_WithUseDisplayNameFalse_ShouldReturnPropertyName()
+        {
+            // useDisplayName: false implies "Try PropertyName first, then DisplayName", AND return PropertyName
+
+            // 1. By PropertyName -> Returns PropertyName
+            Assert.That(PropertyAccessor.GetDisplayName<TestModel>("Code", useDisplayName: false), Is.EqualTo("Code"));
+
+            // 2. By DisplayName (Fallback) -> Returns PropertyName
+            Assert.That(PropertyAccessor.GetDisplayName<TestModel>("Code_Xaf", useDisplayName: false), Is.EqualTo("Code"));
+
+            // 3. Case Insensitive (Default) -> Returns PropertyName (Case corrected)
+            Assert.That(PropertyAccessor.GetDisplayName<TestModel>("code", useDisplayName: false), Is.EqualTo("Code"));
+            Assert.That(PropertyAccessor.GetDisplayName<TestModel>("code_xaf", useDisplayName: false), Is.EqualTo("Code"));
+
+            // 4. Non-existent property returns input
+            Assert.That(PropertyAccessor.GetDisplayName<TestModel>("NonExistent", useDisplayName: false), Is.EqualTo("NonExistent"));
         }
 
         [Test]

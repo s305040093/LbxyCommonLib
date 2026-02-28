@@ -9,6 +9,8 @@ using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System.Data;
 using System.IO;
+using LbxyCommonLib.Benchmarks.Cable;
+using Benchmarks.Ext;
 
 namespace Benchmarks
 {
@@ -16,7 +18,7 @@ namespace Benchmarks
     {
         public static void Main(string[] args)
         {
-            var switcher = new BenchmarkSwitcher(new[] { typeof(ListCompressionBenchmarks), typeof(NumericalEqualityBenchmarks), typeof(DirectoryLauncherBenchmarks), typeof(StringExtensionsBenchmarks), typeof(FileNameLauncherBenchmarks), typeof(ExcelImporterBenchmarks) });
+            var switcher = new BenchmarkSwitcher(new[] { typeof(ListCompressionBenchmarks), typeof(NumericalEqualityBenchmarks), typeof(DirectoryLauncherBenchmarks), typeof(StringExtensionsBenchmarks), typeof(FileNameLauncherBenchmarks), typeof(ExcelImporterBenchmarks), typeof(CableParserBenchmarks), typeof(ClassExtensionsBenchmarks), typeof(PropertyAccessorBenchmarks) });
             switcher.Run(args);
         }
     }

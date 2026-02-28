@@ -3,6 +3,21 @@
 本项目遵循「保持简洁、面向使用者」的变更记录风格。  
 版本号由 MinVer 根据 Git 标签自动生成。
 
+## [Unreleased]
+
+## [0.2.1] - 2026-02-28
+
+### 新增
+
+- PropertyAccessor 增加 `useDisplayName` 参数，支持强制使用显示名称进行属性查找与读写。
+- PropertyAccessor 增加 `comparison` 参数，支持自定义属性名匹配的大小写规则。
+- 优化属性查找性能：针对 `Ordinal` 和 `OrdinalIgnoreCase` 使用字典查找。
+- 增加属性查找失败时的详细异常信息（列出可用显示名称）。
+
+### 修复
+
+- 修复 `PropertyAccessor.GetDisplayName` 在 `useDisplayName: false` 时错误返回显示名称的问题。
+
 ## [0.1.0] - 2026-02-22
 
 Commit: 299ee1d7ab93e041959ad394c4638295ec14f417
