@@ -31,7 +31,7 @@ namespace Benchmarks.Ext
         {
             for (int i = 0; i < 1000; i++)
             {
-                _obj.ToPropertyDictionary(_target);
+                _obj.ToPropertyDictionary();
             }
         }
 

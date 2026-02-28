@@ -98,17 +98,6 @@ namespace LbxyCommonLib.Ext
         /// 获取属性值。
         /// </summary>
         /// <param name="instance">对象实例。</param>
-        /// <param name="propertyName">属性名称。</param>
-        /// <returns>属性值。</returns>
-        public static object GetValue(T instance, string propertyName)
-        {
-            return GetValue(instance, propertyName, useDisplayName: false);
-        }
-
-        /// <summary>
-        /// 获取属性值。
-        /// </summary>
-        /// <param name="instance">对象实例。</param>
         /// <param name="propertyName">属性名称或显示名称。</param>
         /// <param name="useDisplayName">是否强制使用显示名称匹配（默认 true）。</param>
         /// <param name="comparison">字符串比较规则（默认 OrdinalIgnoreCase）。</param>
@@ -138,17 +127,6 @@ namespace LbxyCommonLib.Ext
             }
 
             return meta.Getter(instance);
-        }
-
-        /// <summary>
-        /// 设置属性值。
-        /// </summary>
-        /// <param name="instance">对象实例。</param>
-        /// <param name="propertyName">属性名称。</param>
-        /// <param name="value">要设置的值。</param>
-        public static void SetValue(T instance, string propertyName, object value)
-        {
-            SetValue(instance, propertyName, value, useDisplayName: true);
         }
 
         /// <summary>

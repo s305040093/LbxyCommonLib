@@ -5,6 +5,31 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-28
+
+### 新增
+
+- 新增 `MergeOrReplace` 扩展方法，支持将对象转换为属性字典后，与外部字典进行合并或替换。
+- 新增 `LbxyCommonLib.Collections` 命名空间及 `DictionaryOperations` 模块。
+- 提供 `Merge` 方法，支持字典的浅层合并与深度合并（递归合并嵌套字典）。
+- 提供 `Replace` 方法，支持仅替换目标字典中已存在键的值。
+- 支持自定义合并冲突策略：`Overwrite`（覆盖）、`KeepTarget`（保留）、`Throw`（报错）。
+
+### 移除
+
+- 移除 `ToPropertyDictionaryWithOverride` 扩展方法。请使用 `MergeOrReplace` 代替。
+- 移除 `OverrideStrategy` 枚举。请使用 `LbxyCommonLib.Collections.DictionaryConflictStrategy` 代替。
+
+## [0.2.2] - 2026-02-28
+
+### 变更
+
+- `ClassExtensions.ToPropertyDictionary` 的 `useDisplayName` 参数默认值由 `false` 更改为 `true`。默认情况下将使用属性显示名称作为字典键。
+
+### 新增
+
+- `ClassExtensions.ToPropertyDictionary` 增加 `useDisplayName` 可选参数，允许使用属性显示名称作为字典键。
+
 ## [0.2.1] - 2026-02-28
 
 ### 新增

@@ -60,5 +60,5 @@ ToPropertyDictionary 已基于 PropertyAccessor 做缓存优化：
 using LbxyCommonLib.Ext;
 
 var dict1 = model.ToPropertyDictionary(); // key 为属性名
-var dict2 = model.ToPropertyDictionary(options: ClassExtensions.PropertyNameOptions.UseDisplayAttributes); // key 为显示名
+var dict2 = model.ToPropertyDictionary(useDisplayName: true); // key 为显示名
 ```

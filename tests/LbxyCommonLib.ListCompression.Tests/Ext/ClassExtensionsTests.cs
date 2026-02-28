@@ -6,6 +6,8 @@ using System.ComponentModel.DataAnnotations;
 using LbxyCommonLib.Ext;
 using NUnit.Framework;
 
+using System.Runtime.Serialization;
+
 namespace LbxyCommonLib.ListCompression.Tests.Ext
 {
     // 模拟 DevExpress 的 XafDisplayNameAttribute
@@ -70,23 +72,6 @@ namespace LbxyCommonLib.ListCompression.Tests.Ext
         }
 
         [Test]
-        public void Map_ToExistingDictionary_ShouldOverwrite()
-        {
-            var obj = new SimpleClass { Name = "Bob", Age = 25 };
-            var dict = new Dictionary<string, string>
-            {
-                { "Name", "OldName" },
-                { "ExistingKey", "ExistingValue" }
-            };
-
-            obj.ToPropertyDictionary(dict);
-
-            Assert.That(dict["Name"], Is.EqualTo("Bob")); // Overwritten
-            Assert.That(dict["Age"], Is.EqualTo("25"));   // Added
-            Assert.That(dict["ExistingKey"], Is.EqualTo("ExistingValue")); // Preserved
-        }
-
-        [Test]
         public void Map_NullValues_ShouldBeEmptyString()
         {
             var obj = new SimpleClass { Name = null, BirthDate = null };
@@ -110,55 +95,73 @@ namespace LbxyCommonLib.ListCompression.Tests.Ext
         }
 
         [Test]
-        public void Map_WithDisplayAttributes_ShouldUseAttributeName()
+        public void Map_WithUseDisplayNameFalse_ShouldIgnoreDisplayAttributes()
         {
             var obj = new DisplayAttributeClass();
-            var dict = obj.ToPropertyDictionary(options: ClassExtensions.PropertyNameOptions.UseDisplayAttributes);
+            var dict = obj.ToPropertyDictionary(useDisplayName: false);
 
-            // DisplayName
+            Assert.That(dict.ContainsKey("Name"), Is.True);
+            Assert.That(dict.ContainsKey("Description"), Is.True);
+            Assert.That(dict.ContainsKey("Code"), Is.True);
+            Assert.That(dict.ContainsKey("Priority"), Is.True);
+            Assert.That(dict.ContainsKey("NoAttribute"), Is.True);
+
+            Assert.That(dict.ContainsKey("DN_Name"), Is.False);
+            Assert.That(dict.ContainsKey("D_Description"), Is.False);
+            Assert.That(dict.ContainsKey("Xaf_Code"), Is.False);
+        }
+
+        [Test]
+        public void Map_Default_ShouldUseDisplayAttributes()
+        {
+            var obj = new DisplayAttributeClass();
+            // Default useDisplayName is now true
+            var dict = obj.ToPropertyDictionary();
+
             Assert.That(dict.ContainsKey("DN_Name"), Is.True);
-            Assert.That(dict.ContainsKey("Name"), Is.False);
+            Assert.That(dict["DN_Name"], Is.EqualTo("Value1"));
 
-            // Display(Name=...)
             Assert.That(dict.ContainsKey("D_Description"), Is.True);
-            Assert.That(dict.ContainsKey("Description"), Is.False);
+            Assert.That(dict["D_Description"], Is.EqualTo("Value2"));
 
-            // XafDisplayName
             Assert.That(dict.ContainsKey("Xaf_Code"), Is.True);
-            Assert.That(dict.ContainsKey("Code"), Is.False);
+            Assert.That(dict["Xaf_Code"], Is.EqualTo("Value3"));
 
             // Priority: Xaf > DisplayName > Display
             Assert.That(dict.ContainsKey("Xaf_Priority"), Is.True);
-            Assert.That(dict.ContainsKey("DN_Priority"), Is.False);
-            Assert.That(dict.ContainsKey("D_Priority"), Is.False);
+            Assert.That(dict["Xaf_Priority"], Is.EqualTo("Value4"));
 
-            // No Attribute fallback
+            // No attribute -> fallback to property name
             Assert.That(dict.ContainsKey("NoAttribute"), Is.True);
+            Assert.That(dict["NoAttribute"], Is.EqualTo("Value5"));
         }
 
         [Test]
-        public void Map_WithoutDisplayAttributesOption_ShouldUsePropertyName()
+        public void Map_WithUseDisplayNameTrue_ShouldUseDisplayAttributes()
         {
             var obj = new DisplayAttributeClass();
-            var dict = obj.ToPropertyDictionary(options: ClassExtensions.PropertyNameOptions.Default);
+            var dict = obj.ToPropertyDictionary(useDisplayName: true);
 
-            Assert.That(dict.ContainsKey("Name"), Is.True);
-            Assert.That(dict.ContainsKey("DN_Name"), Is.False);
+            Assert.That(dict.ContainsKey("DN_Name"), Is.True);
+            Assert.That(dict["DN_Name"], Is.EqualTo("Value1"));
+
+            Assert.That(dict.ContainsKey("D_Description"), Is.True);
+            Assert.That(dict["D_Description"], Is.EqualTo("Value2"));
+
+            Assert.That(dict.ContainsKey("Xaf_Code"), Is.True);
+            Assert.That(dict["Xaf_Code"], Is.EqualTo("Value3"));
+
+            // Priority: Xaf > DisplayName > Display
+            Assert.That(dict.ContainsKey("Xaf_Priority"), Is.True);
+            Assert.That(dict["Xaf_Priority"], Is.EqualTo("Value4"));
+
+            // No attribute -> fallback to property name
+            Assert.That(dict.ContainsKey("NoAttribute"), Is.True);
+            Assert.That(dict["NoAttribute"], Is.EqualTo("Value5"));
         }
 
         [Test]
-        public void Map_NullObject_ShouldReturnTarget()
-        {
-            SimpleClass obj = null;
-            var target = new Dictionary<string, string>();
-            var result = obj.ToPropertyDictionary(target);
-
-            Assert.That(result, Is.SameAs(target));
-            Assert.That(result, Is.Empty);
-        }
-
-        [Test]
-        public void Map_NullObject_NoTarget_ShouldReturnNewEmpty()
+        public void Map_NullObject_ShouldReturnEmpty()
         {
             SimpleClass obj = null;
             var result = obj.ToPropertyDictionary();
@@ -168,92 +171,20 @@ namespace LbxyCommonLib.ListCompression.Tests.Ext
         }
 
         [Test]
-        public void Map_OnlyUpdateExisting_True_ShouldIgnoreNewKeys()
-        {
-            var obj = new SimpleClass { Name = "UpdatedName", Age = 99 };
-            var dict = new Dictionary<string, string>
-            {
-                { "Name", "OldName" }
-            };
-
-            // Age is in obj but not in dict. Should be ignored.
-            obj.ToPropertyDictionary(dict, options: ClassExtensions.PropertyNameOptions.Default, onlyUpdateExisting: true);
-
-            Assert.That(dict["Name"], Is.EqualTo("UpdatedName"));
-            Assert.That(dict.ContainsKey("Age"), Is.False);
-        }
-
-        [Test]
-        public void Map_OnlyUpdateExisting_False_ShouldAddNewKeys()
-        {
-            var obj = new SimpleClass { Name = "UpdatedName", Age = 99 };
-            var dict = new Dictionary<string, string>
-            {
-                { "Name", "OldName" }
-            };
-
-            // Default behavior (false) -> Add new keys
-            obj.ToPropertyDictionary(dict, options: ClassExtensions.PropertyNameOptions.Default, onlyUpdateExisting: false);
-
-            Assert.That(dict["Name"], Is.EqualTo("UpdatedName"));
-            Assert.That(dict["Age"], Is.EqualTo("99"));
-        }
-
-        [Test]
-        public void Map_OnlyUpdateExisting_True_WithNullTarget_ShouldReturnEmpty()
-        {
-            var obj = new SimpleClass { Name = "Test", Age = 10 };
-
-            // Null target -> New empty dict created -> No keys existing -> Nothing added
-            var result = obj.ToPropertyDictionary(null, options: ClassExtensions.PropertyNameOptions.Default, onlyUpdateExisting: true);
-
-            Assert.That(result, Is.Not.Null);
-            Assert.That(result, Is.Empty);
-        }
-
-        [Test]
-        public void Map_OnlyUpdateExisting_True_WithNestedObjectProp_ShouldIgnoreIfKeyMissing()
-        {
-            // Although implementation treats values as strings, checking logic holds
-            var obj = new { Nested = new SimpleClass { Name = "Inner" } };
-            var dict = new Dictionary<string, string>();
-
-            // Nested prop "Nested" not in dict -> Should be ignored
-            obj.ToPropertyDictionary(dict, onlyUpdateExisting: true);
-
-            Assert.That(dict, Is.Empty);
-        }
-
-        [Test]
-        public void Map_OnlyUpdateExisting_True_WithNestedObjectProp_ShouldUpdateIfKeyExists()
-        {
-            var obj = new { Nested = new SimpleClass { Name = "Inner" } };
-            var dict = new Dictionary<string, string>
-             {
-                 { "Nested", "OldValue" }
-             };
-
-            // Key exists -> Should update (ToString called on object)
-            obj.ToPropertyDictionary(dict, onlyUpdateExisting: true);
-
-            Assert.That(dict["Nested"], Is.EqualTo(obj.Nested.ToString()));
-        }
-
-        [Test]
         public void Map_ComplexAndCollectionTypes_ShouldCallToString()
         {
             var obj = new
             {
                 Complex = new SimpleClass { Name = "Inner" },
                 List = new List<int> { 1, 2, 3 },
-                MyEnum = ClassExtensions.PropertyNameOptions.UseDisplayAttributes
+                MyEnum = DayOfWeek.Monday
             };
 
             var dict = obj.ToPropertyDictionary();
 
             Assert.That(dict["Complex"], Is.EqualTo(obj.Complex.ToString()));
             Assert.That(dict["List"], Is.EqualTo(obj.List.ToString()));
-            Assert.That(dict["MyEnum"], Is.EqualTo("UseDisplayAttributes"));
+            Assert.That(dict["MyEnum"], Is.EqualTo("Monday"));
         }
 
         [Test]
@@ -265,6 +196,161 @@ namespace LbxyCommonLib.ListCompression.Tests.Ext
 
             // object has no public instance properties
             Assert.That(dict, Is.Empty);
+        }
+
+
+
+        [Test]
+        public void MergeOrReplace_NullSource_ShouldThrowArgumentNullException()
+        {
+            SimpleClass obj = null;
+            var src = new Dictionary<string, string>();
+            Assert.Throws<ArgumentNullException>(() => obj.MergeOrReplace(src));
+        }
+
+        [Test]
+        public void MergeOrReplace_NullSrc_ShouldReturnPropertyDictionary()
+        {
+            var obj = new SimpleClass { Name = "Alice", Age = 30 };
+            var result = obj.MergeOrReplace(null);
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Count, Is.EqualTo(3)); // Name, Age, BirthDate
+            Assert.That(result["Name"], Is.EqualTo("Alice"));
+        }
+
+        [Test]
+        public void MergeOrReplace_EmptySrc_ShouldReturnPropertyDictionary()
+        {
+            var obj = new SimpleClass { Name = "Alice", Age = 30 };
+            var result = obj.MergeOrReplace(new Dictionary<string, string>());
+
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Count, Is.EqualTo(3));
+            Assert.That(result["Name"], Is.EqualTo("Alice"));
+        }
+
+        [Test]
+        public void MergeOrReplace_Merge_DuplicateKeys_Overwrite_ShouldUpdateValue()
+        {
+            var obj = new SimpleClass { Name = "Alice", Age = 30 };
+            var src = new Dictionary<string, string> { { "Name", "Bob" } };
+
+            var result = obj.MergeOrReplace(src, LbxyCommonLib.Collections.DictionaryConflictStrategy.Overwrite);
+
+            Assert.That(result["Name"], Is.EqualTo("Bob"));
+            Assert.That(result["Age"], Is.EqualTo("30"));
+        }
+
+        [Test]
+        public void MergeOrReplace_Merge_DuplicateKeys_KeepTarget_ShouldKeepOriginalValue()
+        {
+            var obj = new SimpleClass { Name = "Alice", Age = 30 };
+            var src = new Dictionary<string, string> { { "Name", "Bob" } };
+
+            var result = obj.MergeOrReplace(src, LbxyCommonLib.Collections.DictionaryConflictStrategy.KeepTarget);
+
+            Assert.That(result["Name"], Is.EqualTo("Alice"));
+            Assert.That(result["Age"], Is.EqualTo("30"));
+        }
+
+        [Test]
+        public void MergeOrReplace_Merge_NewKeys_ShouldAdd()
+        {
+            var obj = new SimpleClass { Name = "Alice", Age = 30 };
+            var src = new Dictionary<string, string> { { "City", "New York" } };
+
+            var result = obj.MergeOrReplace(src);
+
+            Assert.That(result.ContainsKey("City"), Is.True);
+            Assert.That(result["City"], Is.EqualTo("New York"));
+            Assert.That(result["Name"], Is.EqualTo("Alice"));
+        }
+
+        [Test]
+        public void MergeOrReplace_Replace_DuplicateKeys_ShouldUpdate()
+        {
+            var obj = new SimpleClass { Name = "Alice", Age = 30 };
+            var src = new Dictionary<string, string> { { "Name", "Bob" } };
+
+            var result = obj.MergeOrReplace(src, isReplace: true);
+
+            Assert.That(result["Name"], Is.EqualTo("Bob"));
+            Assert.That(result["Age"], Is.EqualTo("30"));
+        }
+
+        [Test]
+        public void MergeOrReplace_Replace_NewKeys_ShouldIgnore()
+        {
+            var obj = new SimpleClass { Name = "Alice", Age = 30 };
+            var src = new Dictionary<string, string> { { "City", "New York" } };
+
+            var result = obj.MergeOrReplace(src, isReplace: true);
+
+            Assert.That(result.ContainsKey("City"), Is.False);
+            Assert.That(result["Name"], Is.EqualTo("Alice"));
+        }
+
+        [Test]
+        public void MergeOrReplace_WithUseDisplayName_ShouldRespectParameter()
+        {
+            var obj = new DisplayAttributeClass { Name = "Value1" };
+            // useDisplayName=true by default: key should be "DN_Name"
+            // src key matches "DN_Name"
+            var src = new Dictionary<string, string> { { "DN_Name", "Overridden" } };
+
+            var result = obj.MergeOrReplace(src);
+
+            Assert.That(result.ContainsKey("DN_Name"), Is.True);
+            Assert.That(result["DN_Name"], Is.EqualTo("Overridden"));
+            Assert.That(result.ContainsKey("Name"), Is.False);
+        }
+
+        [Test]
+        public void MergeOrReplace_WithUseDisplayNameFalse_ShouldUsePropertyNames()
+        {
+            var obj = new DisplayAttributeClass { Name = "Value1" };
+            // useDisplayName=false: key should be "Name"
+            var src = new Dictionary<string, string> { { "Name", "Overridden" } };
+
+            var result = obj.MergeOrReplace(src, useDisplayName: false);
+
+            Assert.That(result.ContainsKey("Name"), Is.True);
+            Assert.That(result["Name"], Is.EqualTo("Overridden"));
+            Assert.That(result.ContainsKey("DN_Name"), Is.False);
+        }
+
+        private class ComplexModel
+        {
+            public string Title { get; set; }
+            public SimpleClass Child { get; set; }
+        }
+
+        private class DeepModel
+        {
+            public int Level { get; set; }
+            public DeepModel Next { get; set; }
+        }
+
+        private class CircularModel
+        {
+            public string Name { get; set; }
+            public CircularModel Child { get; set; }
+        }
+
+        private class IgnoredModel
+        {
+            public string Visible { get; set; }
+            [IgnoreDataMember]
+            public string Hidden1 { get; set; }
+            [Newtonsoft.Json.JsonIgnore]
+            public string Hidden2 { get; set; }
+        }
+
+        private class NullableModel
+        {
+            public int? Value { get; set; }
+            public DateTime? Date { get; set; }
         }
     }
 }
