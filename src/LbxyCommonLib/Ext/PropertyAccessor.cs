@@ -89,7 +89,7 @@ namespace LbxyCommonLib.Ext
         public static void SetValue<T>(T instance, string propertyName, object value)
             where T : class
         {
-            PropertyAccessor<T>.SetValue(instance, propertyName, value, useDisplayName: false);
+            PropertyAccessor<T>.SetValue(instance, propertyName, value, useDisplayName: true);
         }
 
         /// <summary>
