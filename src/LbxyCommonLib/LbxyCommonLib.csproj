@@ -6,7 +6,7 @@
     <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <NoWarn>SA1629;SA1642;SA1623</NoWarn>
     <PackageId>LbxyCommonLib</PackageId>
-    <Version>0.3.1</Version>
+    <Version>0.3.2</Version>
     <Authors>LbxyCommonLib Team</Authors>
     <Company>Lbxy</Company>
     <Description>Common utility library for .NET Framework 4.5 and .NET Standard 2.0, including list compression, Excel import, file I/O helpers, string processing, configuration, networking and launcher utilities.</Description>

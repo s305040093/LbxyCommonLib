@@ -352,5 +352,258 @@ namespace LbxyCommonLib.ListCompression.Tests.Ext
             public int? Value { get; set; }
             public DateTime? Date { get; set; }
         }
+
+        private class PlaceholderModel
+        {
+            public string Text { get; set; }
+            public int Number { get; set; }
+            public double Floating { get; set; }
+            public bool Flag { get; set; }
+            public DayOfWeek WeekDay { get; set; }
+            public Guid Identifier { get; set; }
+            public int? NullableInt { get; set; }
+        }
+
+        [Test]
+        public void ReplacePlaceholders_BasicStringReplacement_ShouldSucceed()
+        {
+            var obj = new PlaceholderModel { Text = "${Name}" };
+            var map = new Dictionary<string, string> { { "${Name}", "Alice" } };
+
+            obj.ReplacePlaceholdersFromDictionary(map);
+
+            Assert.That(obj.Text, Is.EqualTo("Alice"));
+        }
+
+        [Test]
+        public void ReplacePlaceholders_NoMatch_ShouldKeepOriginal()
+        {
+            var obj = new PlaceholderModel { Text = "Original" };
+            var map = new Dictionary<string, string> { { "${Name}", "Alice" } };
+
+            obj.ReplacePlaceholdersFromDictionary(map);
+
+            Assert.That(obj.Text, Is.EqualTo("Original"));
+        }
+
+        [Test]
+        public void ReplacePlaceholders_ValueTypes_ShouldConvert()
+        {
+            // Initial values: Number=0 (default), but let's set them to placeholders?
+            // Wait, value types can't hold "${Placeholder}" string.
+            // Ah, the logic is: property value (as string) matches key.
+            // If int Number = 100. String is "100".
+            // Map: { "100", "200" } -> Number becomes 200.
+
+            var obj = new PlaceholderModel { Number = 100, Floating = 1.5, Flag = false };
+            var map = new Dictionary<string, string>
+            {
+                { "100", "200" },
+                { "1.5", "2.5" },
+                { "False", "True" } // bool.ToString() is "False"
+            };
+
+            obj.ReplacePlaceholdersFromDictionary(map);
+
+            Assert.That(obj.Number, Is.EqualTo(200));
+            Assert.That(obj.Floating, Is.EqualTo(2.5));
+            Assert.That(obj.Flag, Is.True);
+        }
+
+        [Test]
+        public void ReplacePlaceholders_NullableTypes_ShouldConvert()
+        {
+            var obj = new PlaceholderModel { NullableInt = 123 };
+            var map = new Dictionary<string, string>
+            {
+                { "123", "456" },
+                // Test setting to null?
+                // If map value is empty string?
+            };
+
+            obj.ReplacePlaceholdersFromDictionary(map);
+
+            Assert.That(obj.NullableInt, Is.EqualTo(456));
+        }
+
+        [Test]
+        public void ReplacePlaceholders_NullableTypes_SetToNull_ShouldSucceed()
+        {
+            var obj = new PlaceholderModel { NullableInt = 123 };
+            var map = new Dictionary<string, string> { { "123", "" } }; // Empty string -> null
+
+            obj.ReplacePlaceholdersFromDictionary(map);
+
+            Assert.That(obj.NullableInt, Is.Null);
+        }
+
+        [Test]
+        public void ReplacePlaceholders_Enum_ShouldParse()
+        {
+            var obj = new PlaceholderModel { WeekDay = DayOfWeek.Monday };
+            var map = new Dictionary<string, string> { { "Monday", "Friday" } };
+
+            obj.ReplacePlaceholdersFromDictionary(map);
+
+            Assert.That(obj.WeekDay, Is.EqualTo(DayOfWeek.Friday));
+        }
+
+        [Test]
+        public void ReplacePlaceholders_Guid_ShouldParse()
+        {
+            var g1 = Guid.NewGuid();
+            var g2 = Guid.NewGuid();
+            var obj = new PlaceholderModel { Identifier = g1 };
+            var map = new Dictionary<string, string> { { g1.ToString(), g2.ToString() } };
+
+            obj.ReplacePlaceholdersFromDictionary(map);
+
+            Assert.That(obj.Identifier, Is.EqualTo(g2));
+        }
+
+        [Test]
+        public void ReplacePlaceholders_NullSource_ShouldThrow()
+        {
+            PlaceholderModel obj = null;
+            Assert.Throws<ArgumentNullException>(() => obj.ReplacePlaceholdersFromDictionary(new Dictionary<string, string>()));
+        }
+
+        [Test]
+        public void ReplacePlaceholders_EmptyMap_ShouldReturnOriginal()
+        {
+            var obj = new PlaceholderModel { Text = "${Name}" };
+            var map = new Dictionary<string, string>();
+
+            obj.ReplacePlaceholdersFromDictionary(map);
+
+            Assert.That(obj.Text, Is.EqualTo("${Name}"));
+        }
+
+        [Test]
+        public void ReplacePlaceholders_CaseSensitivity_ShouldRespectComparer()
+        {
+            var obj = new PlaceholderModel { Text = "${NAME}" };
+            var map = new Dictionary<string, string> { { "${name}", "Alice" } }; // Lowercase key
+
+            // Default (Ordinal) - No match
+            obj.ReplacePlaceholdersFromDictionary(map);
+            Assert.That(obj.Text, Is.EqualTo("${NAME}"));
+
+            // IgnoreCase
+            obj.ReplacePlaceholdersFromDictionary(map, StringComparer.OrdinalIgnoreCase);
+            Assert.That(obj.Text, Is.EqualTo("Alice"));
+        }
+
+        [Test]
+        public async System.Threading.Tasks.Task ReplacePlaceholdersAsync_ShouldWork()
+        {
+            var obj = new PlaceholderModel { Text = "${Name}" };
+            var map = new Dictionary<string, string> { { "${Name}", "Alice" } };
+
+            await obj.ReplacePlaceholdersFromDictionaryAsync(map);
+
+            Assert.That(obj.Text, Is.EqualTo("Alice"));
+        }
+
+        [Test]
+        public void ReplacePlaceholders_ThreadSafety_ConcurrentCalls_ShouldSucceed()
+        {
+            // PropertyAccessor cache is static. Ensure concurrent access doesn't crash.
+            var map = new Dictionary<string, string> { { "${Name}", "Alice" } };
+
+            System.Threading.Tasks.Parallel.For(0, 100, i =>
+            {
+                var obj = new PlaceholderModel { Text = "${Name}" };
+                obj.ReplacePlaceholdersFromDictionary(map);
+                Assert.That(obj.Text, Is.EqualTo("Alice"));
+            });
+        }
+
+        #region ToPropertyDictionaryWithReplacement Tests
+
+        [Test]
+        public void ToPropertyDictionaryWithReplacement_ShouldReplaceValues_AndNotModifySource()
+        {
+            var obj = new SimpleClass { Name = "${Name}", Age = 30 };
+            var map = new Dictionary<string, string> { { "${Name}", "Bob" }, { "30", "40" } };
+
+            // Act
+            var result = obj.ToPropertyDictionaryWithReplacement(map);
+
+            // Assert Dictionary Content
+            Assert.That(result["Name"], Is.EqualTo("Bob"));
+            Assert.That(result["Age"], Is.EqualTo("40"));
+
+            // Assert Source Unchanged
+            Assert.That(obj.Name, Is.EqualTo("${Name}"));
+            Assert.That(obj.Age, Is.EqualTo(30));
+        }
+
+        [Test]
+        public void ToPropertyDictionaryWithReplacement_Equivalence_OrderIndependent()
+        {
+            // Verify: ToDictionary -> Replace == Clone -> Replace -> ToDictionary
+            // Note: This only holds true for valid replacements compatible with property types.
+            var obj = new SimpleClass { Name = "${Name}", Age = 30, BirthDate = new DateTime(2000, 1, 1) };
+            var map = new Dictionary<string, string>
+            {
+                { "${Name}", "Bob" },
+                { "30", "40" },
+                { new DateTime(2000, 1, 1).ToString(), new DateTime(2001, 1, 1).ToString() }
+            };
+
+            // 1. New Method (Safe)
+            var result1 = obj.ToPropertyDictionaryWithReplacement(map);
+
+            // 2. Manual Clone -> Replace -> ToDictionary (Unsafe simulation)
+            var clone = new SimpleClass
+            {
+                Name = obj.Name,
+                Age = obj.Age,
+                BirthDate = obj.BirthDate
+            };
+            clone.ReplacePlaceholdersFromDictionary(map);
+            var result2 = clone.ToPropertyDictionary();
+
+            Assert.That(result1, Is.EquivalentTo(result2));
+        }
+
+        [Test]
+        public void ToPropertyDictionaryWithReplacement_NullSource_ShouldThrow()
+        {
+            SimpleClass obj = null;
+            Assert.Throws<ArgumentNullException>(() => obj.ToPropertyDictionaryWithReplacement(new Dictionary<string, string>()));
+        }
+
+        [Test]
+        public void ToPropertyDictionaryWithReplacement_NullMap_ShouldReturnOriginal()
+        {
+            var obj = new SimpleClass { Name = "Alice", Age = 30 };
+            var result = obj.ToPropertyDictionaryWithReplacement(null);
+
+            Assert.That(result["Name"], Is.EqualTo("Alice"));
+            Assert.That(result["Age"], Is.EqualTo("30"));
+        }
+
+        [Test]
+        public void ToPropertyDictionaryWithReplacement_ReadOnlyProp_ShouldBeReplacedInDict()
+        {
+            // Even though ReadOnlyProp is read-only on object, the dictionary is just strings.
+            // So replacement should happen in the dictionary.
+            var obj = new ReadOnlyPropClass();
+            var map = new Dictionary<string, string> { { "Original", "Replaced" } };
+
+            var result = obj.ToPropertyDictionaryWithReplacement(map);
+
+            Assert.That(result["ReadOnly"], Is.EqualTo("Replaced"));
+            Assert.That(obj.ReadOnly, Is.EqualTo("Original"));
+        }
+
+        private class ReadOnlyPropClass
+        {
+            public string ReadOnly { get; } = "Original";
+        }
+
+        #endregion
     }
 }
